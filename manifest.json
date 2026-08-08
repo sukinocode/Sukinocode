@@ -1,20 +1,25 @@
 {
-  "name": "Aplikasi Online PWA",
-  "short_name": "OnlinePWA",
+  "name": "Suki 999+",
+  "short_name": "Suki 999+",
+  "version": "1",
+  "description": "Aplikasi Suki Games PWA",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "orientation": "any",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "suki2.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "suki1.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
