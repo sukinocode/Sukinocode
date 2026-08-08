@@ -1,1 +1,15 @@
+<!-- Manifest Link -->
+<link rel="manifest" href="Pwa/manifest.json">
+<meta name="theme-color" content="#000000">
+<link rel="apple-touch-icon" href="aset/suki2.png">
 
+<!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('Pwa/sw.js')
+        .then((reg) => console.log('Service Worker terdaftar:', reg.scope))
+        .catch((err) => console.error('Gagal mendaftarkan Service Worker:', err));
+    });
+  }
+</script>
