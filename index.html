@@ -86,6 +86,93 @@
   <div id="screen-games">
     <h1>Daftar Game</h1>
     <div class="game-list">
+      <a href="Game/Project%20catur%203d/index.html" class="game-card">
+        <img src="Project%20catur%203d.jpg" alt="Project catur 3d">
+        <span class="game-title">Project catur 3d</span>
+      </a>
+      <a href="Game/Suki%20plane/index.html" class="game-card">
+        <img src="Suki%20plane.jpg" alt="Suki plane">
+        <span class="game-title">Suki plane</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    function checkConnection() {
+      const offlineScreen = document.getElementById('screen-offline');
+      const gamesScreen = document.getElementById('screen-games');
+      
+      if (navigator.onLine) {
+        offlineScreen.style.display = 'none';
+        gamesScreen.style.display = 'flex';
+      } else {
+        offlineScreen.style.display = 'flex';
+        gamesScreen.style.display = 'none';
+      }
+    }
+
+    window.addEventListener('online', checkConnection);
+    window.addEventListener('offline', checkConnection);
+    checkConnection();
+  </script>
+</body>
+</html>
+      text-align: center;
+      padding: 20px;
+    }
+    #screen-games {
+      justify-content: flex-start;
+      padding: 20px;
+      overflow: hidden;
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .game-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .game-card {
+      display: flex;
+      align-items: center;
+      background-color: #1e1e1e;
+      border-radius: 12px;
+      padding: 10px;
+      text-decoration: none;
+      color: #ffffff;
+      border: 1px solid #333;
+    }
+    .game-card img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-right: 15px;
+    }
+    .game-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="screen-offline">
+    <h1>Koneksi Terputus</h1>
+    <p>Aplikasi ini membutuhkan koneksi internet untuk masuk.</p>
+  </div>
+
+  <div id="screen-games">
+    <h1>Daftar Game</h1>
+    <div class="game-list">
       <a href="Game/project-catur-3d/index.html" class="game-card">
         <img src="Project catur 3d.jpg" alt="Project catur 3d">
         <span class="game-title">Project catur 3d</span>
