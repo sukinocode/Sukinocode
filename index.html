@@ -24,7 +24,7 @@
       touch-action: none;
       overscroll-behavior: none;
     }
-    #screen-offline, #screen-games, #screen-home, #screen-event, #screen-device {
+    #screen-offline, #screen-games, #screen-event {
       width: 100vw;
       height: calc(100vh - 60px);
       display: none;
@@ -45,19 +45,9 @@
       padding: 20px;
       overflow-y: auto;
     }
-    #screen-home {
-      justify-content: center;
-      padding: 0;
-    }
     #screen-event {
       justify-content: center;
       padding: 20px;
-    }
-    #screen-device {
-      justify-content: flex-start;
-      padding: 20px;
-      overflow-y: auto;
-      position: relative;
     }
     h1 {
       margin-bottom: 20px;
@@ -91,58 +81,6 @@
       font-size: 18px;
       font-weight: bold;
     }
-    .video-container {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .video-container iframe {
-      width: 100%;
-      height: 100%;
-      max-width: 800px;
-      max-height: 450px;
-      border: none;
-    }
-    .device-info-list {
-      width: 100%;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .device-info-item {
-      background-color: #1e1e1e;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 12px 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .device-info-label {
-      color: #aaa;
-      font-size: 14px;
-    }
-    .device-info-value {
-      font-weight: bold;
-      font-size: 14px;
-      text-align: right;
-    }
-    .device-action-btn {
-      background-color: #0088ff;
-      color: #ffffff;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: bold;
-    }
-    .device-action-btn:active {
-      opacity: 0.8;
-    }
     .bottom-nav {
       position: fixed;
       bottom: 0;
@@ -164,7 +102,7 @@
       color: #888888;
       background: none;
       border: none;
-      width: 25%;
+      width: 50%;
       height: 100%;
       cursor: pointer;
       font-size: 10px;
@@ -178,109 +116,6 @@
       height: 22px;
       fill: currentColor;
     }
-    .sec-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: calc(100vh - 60px);
-      background: #0d1117;
-      z-index: 999;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      overflow: hidden;
-    }
-    .sec-scanner {
-      position: relative;
-      width: 160px;
-      height: 160px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 25px;
-    }
-    .sec-ring {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 3px solid transparent;
-      border-top-color: #0088ff;
-      border-right-color: #00ffcc;
-      animation: spin 1s linear infinite;
-    }
-    .sec-ring.virus {
-      border-top-color: #ff3366;
-      border-right-color: #ff9900;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .sec-radar {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: conic-gradient(from 0deg, rgba(0, 136, 255, 0.4), transparent 60%);
-      animation: spin 1.5s linear infinite;
-    }
-    .sec-radar.virus {
-      background: conic-gradient(from 0deg, rgba(255, 51, 102, 0.4), transparent 60%);
-    }
-    .sec-shield {
-      width: 70px;
-      height: 70px;
-      z-index: 2;
-      fill: #0088ff;
-      filter: drop-shadow(0 0 10px rgba(0, 136, 255, 0.8));
-    }
-    .sec-shield.virus {
-      fill: #ff3366;
-      filter: drop-shadow(0 0 10px rgba(255, 51, 102, 0.8));
-    }
-    .sec-title {
-      font-size: 18px;
-      font-weight: bold;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-    .sec-status {
-      font-size: 13px;
-      color: #00ffcc;
-      margin-bottom: 15px;
-      font-family: monospace;
-      height: 18px;
-    }
-    .sec-progress-bar {
-      width: 80%;
-      max-width: 280px;
-      height: 8px;
-      background: #222;
-      border-radius: 4px;
-      overflow: hidden;
-      border: 1px solid #333;
-    }
-    .sec-progress-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #0088ff, #00ffcc);
-      transition: width 0.1s ease;
-    }
-    .sec-progress-fill.virus {
-      background: linear-gradient(90deg, #ff3366, #ff9900);
-    }
-    .sec-particles {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      pointer-events: none;
-    }
   </style>
 </head>
 <body>
@@ -288,12 +123,6 @@
   <div id="screen-offline">
     <h1>Koneksi Terputus</h1>
     <p>Aplikasi ini membutuhkan koneksi internet untuk masuk.</p>
-  </div>
-
-  <div id="screen-home">
-    <div class="video-container">
-      <iframe src="https://www.youtube.com/embed/89CafFD5LtA" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
   </div>
 
   <div id="screen-games">
@@ -313,67 +142,14 @@
   <div id="screen-event">
   </div>
 
-  <div id="screen-device">
-    <h1 style="margin-top: 10px;">Your Device</h1>
-    <div class="device-info-list">
-      <div class="device-info-item">
-        <span class="device-info-label">Status Baterai</span>
-        <span class="device-info-value" id="dev-battery-level">Memuat...</span>
-      </div>
-      <div class="device-info-item">
-        <span class="device-info-label">Kesehatan Baterai</span>
-        <span class="device-info-value" id="dev-battery-health">Good (Estimasi)</span>
-      </div>
-      <div class="device-info-item">
-        <span class="device-info-label">IP & Lokasi</span>
-        <span class="device-info-value" id="dev-ip-location">Memuat...</span>
-      </div>
-      <div class="device-info-item">
-        <span class="device-info-label">Mengisi / Tidak Mengisi</span>
-        <span class="device-info-value" id="dev-battery-charging">Memuat...</span>
-      </div>
-      <div class="device-info-item">
-        <span class="device-info-label">Bersihkan Sampah</span>
-        <span class="device-info-value" id="dev-clean-junk">2.4 GB</span>
-        <button class="device-action-btn" onclick="cleanJunk()">Bersihkan</button>
-      </div>
-      <div class="device-info-item">
-        <span class="device-info-label">Pindai Virus</span>
-        <span class="device-info-value" id="dev-scan-virus">2 Terdeteksi</span>
-        <button class="device-action-btn" onclick="cleanVirus()">Bersihkan?</button>
-      </div>
-    </div>
-
-    <div class="sec-overlay" id="sec-overlay">
-      <div class="sec-scanner">
-        <div class="sec-ring" id="sec-ring"></div>
-        <div class="sec-radar" id="sec-radar"></div>
-        <svg class="sec-shield" id="sec-shield" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-      </div>
-      <div class="sec-title" id="sec-title">Membersihkan Sampah...</div>
-      <div class="sec-status" id="sec-status">Mengumpulkan Cache Sistem</div>
-      <div class="sec-progress-bar">
-        <div class="sec-progress-fill" id="sec-progress-fill"></div>
-      </div>
-    </div>
-  </div>
-
   <nav class="bottom-nav" id="main-nav">
-    <button class="nav-item active" onclick="switchTab('screen-home', this)">
-      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      <span>Beranda</span>
-    </button>
-    <button class="nav-item" onclick="switchTab('screen-games', this)">
+    <button class="nav-item active" onclick="switchTab('screen-games', this)">
       <svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
       <span>Daftar Game</span>
     </button>
     <button class="nav-item" onclick="switchTab('screen-event', this)">
       <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
       <span>Event</span>
-    </button>
-    <button class="nav-item" onclick="switchTab('screen-device', this)">
-      <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
-      <span>Your Device</span>
     </button>
   </nav>
 
@@ -386,7 +162,7 @@
       navigator.serviceWorker.register('sw.js');
     }
 
-    let activeTabId = 'screen-home';
+    let activeTabId = 'screen-games';
 
     function switchTab(screenId, element) {
       activeTabId = screenId;
@@ -395,10 +171,8 @@
         return;
       }
       
-      document.getElementById('screen-home').style.display = 'none';
       document.getElementById('screen-games').style.display = 'none';
       document.getElementById('screen-event').style.display = 'none';
-      document.getElementById('screen-device').style.display = 'none';
 
       document.getElementById(screenId).style.display = 'flex';
 
@@ -406,10 +180,6 @@
       navItems.forEach(item => item.classList.remove('active'));
       if (element) {
         element.classList.add('active');
-      }
-
-      if (screenId === 'screen-device') {
-        loadDeviceData();
       }
     }
 
@@ -421,154 +191,23 @@
         offlineScreen.style.display = 'none';
         navBar.style.display = 'flex';
         
-        document.getElementById('screen-home').style.display = 'none';
         document.getElementById('screen-games').style.display = 'none';
         document.getElementById('screen-event').style.display = 'none';
-        document.getElementById('screen-device').style.display = 'none';
 
         document.getElementById(activeTabId).style.display = 'flex';
       } else {
         offlineScreen.style.display = 'flex';
         navBar.style.display = 'none';
         
-        document.getElementById('screen-home').style.display = 'none';
         document.getElementById('screen-games').style.display = 'none';
         document.getElementById('screen-event').style.display = 'none';
-        document.getElementById('screen-device').style.display = 'none';
       }
-    }
-
-    function generateDailyJunk() {
-      const today = new Date().toISOString().slice(0, 10);
-      const savedDate = localStorage.getItem('junk_last_date');
-      const isCleanedToday = localStorage.getItem('junk_cleaned_' + today);
-
-      if (isCleanedToday === 'true') {
-        return '0 GB (Bersih)';
-      }
-
-      if (savedDate !== today) {
-        const minMB = 231.4;
-        const maxMB = 3072;
-        const randomMB = (Math.random() * (maxMB - minMB) + minMB);
-        let displaySize = '';
-        if (randomMB >= 1024) {
-          displaySize = (randomMB / 1024).toFixed(1) + ' GB';
-        } else {
-          displaySize = randomMB.toFixed(1) + ' MB';
-        }
-        localStorage.setItem('junk_last_date', today);
-        localStorage.setItem('junk_current_amount', displaySize);
-        return displaySize;
-      } else {
-        return localStorage.getItem('junk_current_amount') || '2.4 GB';
-      }
-    }
-
-    function loadDeviceData() {
-      document.getElementById('dev-clean-junk').innerText = generateDailyJunk();
-
-      const virusCleaned = localStorage.getItem('virus_cleaned');
-      if (virusCleaned === 'true') {
-        document.getElementById('dev-scan-virus').innerText = '0 Terdeteksi (Aman)';
-      }
-
-      if (navigator.getBattery) {
-        navigator.getBattery().then(function(battery) {
-          updateBatteryStatus(battery);
-          battery.addEventListener('levelchange', function() { updateBatteryStatus(battery); });
-          battery.addEventListener('chargingchange', function() { updateBatteryStatus(battery); });
-        });
-      } else {
-        document.getElementById('dev-battery-level').innerText = 'Tidak Didukung';
-        document.getElementById('dev-battery-charging').innerText = 'Tidak Didukung';
-      }
-
-      fetch('https://ipapi.co/json/')
-        .then(response => response.json())
-        .then(data => {
-          const ip = data.ip || 'Gagal';
-          const loc = (data.city && data.country_name) ? data.city + ', ' + data.country_name : 'Gagal';
-          document.getElementById('dev-ip-location').innerText = ip + ' - ' + loc;
-        })
-        .catch(() => {
-          document.getElementById('dev-ip-location').innerText = 'Gagal Memuat';
-        });
-    }
-
-    function updateBatteryStatus(battery) {
-      document.getElementById('dev-battery-level').innerText = Math.round(battery.level * 100) + '%';
-      document.getElementById('dev-battery-charging').innerText = battery.charging ? 'Mengisi' : 'Tidak Mengisi';
-    }
-
-    function startSecurityProcess(type, onComplete) {
-      const overlay = document.getElementById('sec-overlay');
-      const ring = document.getElementById('sec-ring');
-      const radar = document.getElementById('sec-radar');
-      const shield = document.getElementById('sec-shield');
-      const fill = document.getElementById('sec-progress-fill');
-      const title = document.getElementById('sec-title');
-      const status = document.getElementById('sec-status');
-
-      overlay.style.display = 'flex';
-      fill.style.width = '0%';
-
-      if (type === 'virus') {
-        ring.classList.add('virus');
-        radar.classList.add('virus');
-        shield.classList.add('virus');
-        fill.classList.add('virus');
-        title.innerText = 'Memindai & Membasmi Virus...';
-      } else {
-        ring.classList.remove('virus');
-        radar.classList.remove('virus');
-        shield.classList.remove('virus');
-        fill.classList.remove('virus');
-        title.innerText = 'Membersihkan Sampah...';
-      }
-
-      const junkSteps = ['Scanning Temp Files...', 'Clearing App Cache...', 'Removing Residual Data...', 'Optimizing Storage...'];
-      const virusSteps = ['Scanning System Memory...', 'Checking Malicious Files...', 'Isolating Threats...', 'Cleaning Trojans & Adware...'];
-      const steps = type === 'virus' ? virusSteps : junkSteps;
-
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 2;
-        fill.style.width = progress + '%';
-        
-        let stepIdx = Math.floor((progress / 100) * steps.length);
-        if (stepIdx >= steps.length) stepIdx = steps.length - 1;
-        status.innerText = steps[stepIdx];
-
-        if (progress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            overlay.style.display = 'none';
-            onComplete();
-          }, 300);
-        }
-      }, 30);
-    }
-
-    function cleanJunk() {
-      startSecurityProcess('junk', () => {
-        const today = new Date().toISOString().slice(0, 10);
-        localStorage.setItem('junk_cleaned_' + today, 'true');
-        document.getElementById('dev-clean-junk').innerText = '0 GB (Bersih)';
-      });
-    }
-
-    function cleanVirus() {
-      startSecurityProcess('virus', () => {
-        localStorage.setItem('virus_cleaned', 'true');
-        document.getElementById('dev-scan-virus').innerText = '0 Terdeteksi (Aman)';
-      });
     }
 
     window.addEventListener('online', checkConnection);
     window.addEventListener('offline', checkConnection);
     
-    switchTab('screen-home', document.querySelectorAll('.nav-item')[0]);
+    switchTab('screen-games', document.querySelectorAll('.nav-item')[0]);
     checkConnection();
   </script>
 </body>
