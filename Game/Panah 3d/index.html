@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>3D Archery Game</title>
+<style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+touch-action: none;
+overflow: hidden;
+}
+html, body {
+width: 100vw;
+height: 100vh;
+background-color: #000000;
+font-family: sans-serif;
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+}
+#canvas-container {
+width: 100%;
+height: 100%;
+position: absolute;
+top: 0;
+left: 0;
+z-index: 1;
+}
+#joystick-zone {
+position: absolute;
+bottom: 40px;
+left: 40px;
+width: 140px;
+height: 140px;
+z-index: 10;
+border-radius: 50%;
+background: rgba(255, 255, 255, 0.15);
+border: 2px solid rgba(255, 255, 255, 0.3);
+display: flex;
+align-items: center;
+justify-content: center;
+pointer-events: auto;
+}
+#joystick-knob {
+width: 60px;
+height: 60px;
+border-radius: 50%;
+background: rgba(255, 255, 255, 0.5);
+border: 2px solid rgba(255, 255, 255, 0.8);
+position: absolute;
+transform: translate(0px, 0px);
+pointer-events: none;
+}
+#touch-area {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+z-index: 5;
+}
+#crosshair {
+position: absolute;
+top: 50%;
+left: 50%;
+width: 30px;
+height: 30px;
+transform: translate(-50%, -50%);
+z-index: 8;
+pointer-events: none;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+#crosshair::before, #crosshair::after {
+content: '';
+position: absolute;
+background: rgba(255, 255, 255, 0.8);
+}
+#crosshair::before {
+width: 2px;
+height: 24px;
+}
+#crosshair::after {
+width: 24px;
+height: 2px;
+}
+.crosshair-circle {
+width: 16px;
+height: 16px;
+border: 2px solid rgba(255, 255, 255, 0.8);
+border-radius: 50%;
+position: absolute;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="touch-area"></div>
+<div id="crosshair">
+<div class="crosshair-circle"></div>
+</div>
+<div id="joystick-zone">
+<div id="joystick-knob"></div>
+</div>
+<script>
+window.addEventListener('contextmenu', function(e) {
+e.preventDefault();
+});
+window.addEventListener('wheel', function(e) {
+e.preventDefault();
+}, { passive: false });
+window.addEventListener('touchmove', function(e) {
+e.preventDefault();
+}, { passive: false });
+
+var container = document.getElementById('canvas-container');
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0xa0d8ef);
+scene.fog = new THREE.FogExp2(0xa0d8ef, 0.003);
+
+var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1500);
+var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+container.appendChild(renderer.domElement);
+
+var ambientLight = new THREE.AmbientLight(0xdff0ff, 0.7);
+scene.add(ambientLight);
+
+var sunLight = new THREE.DirectionalLight(0xfffaed, 1.3);
+sunLight.position.set(100, 200, 100);
+sunLight.castShadow = true;
+sunLight.shadow.mapSize.width = 2048;
+sunLight.shadow.mapSize.height = 2048;
+sunLight.shadow.camera.near = 0.5;
+sunLight.shadow.camera.far = 800;
+var d = 150;
+sunLight.shadow.camera.left = -d;
+sunLight.shadow.camera.right = d;
+sunLight.shadow.camera.top = d;
+sunLight.shadow.camera.bottom = -d;
+scene.add(sunLight);
+
+var sunSphereGeo = new THREE.SphereGeometry(12, 32, 32);
+var sunSphereMat = new THREE.MeshBasicMaterial({ color: 0xfff0aa });
+var sunMesh = new THREE.Mesh(sunSphereGeo, sunSphereMat);
+sunMesh.position.copy(sunLight.position).normalize().multiplyScalar(600);
+scene.add(sunMesh);
+
+var lineOutlineMaterial = new THREE.LineBasicMaterial({ color: 0x1a261a, linewidth: 1 });
+
+function createOutlineMesh(geometry) {
+var edges = new THREE.EdgesGeometry(geometry, 25);
+var line = new THREE.LineSegments(edges, lineOutlineMaterial);
+return line;
+}
+
+function getTerrainHeight(x, z) {
+var h1 = Math.sin(x * 0.008) * Math.cos(z * 0.008) * 12;
+var h2 = Math.sin(x * 0.02 + 1.2) * Math.sin(z * 0.02 + 0.8) * 5;
+var h3 = Math.cos(x * 0.003) * Math.sin(z * 0.003) * 25;
+var distFromOrigin = Math.sqrt(x * x + z * z);
+var flattenFactor = Math.min(1.0, distFromOrigin / 40.0);
+return (h1 + h2 + h3) * flattenFactor - 2;
+}
+
+var terrainGeo = new THREE.PlaneGeometry(800, 800, 120, 120);
+terrainGeo.rotateX(-Math.PI / 2);
+var posAttr = terrainGeo.attributes.position;
+for (var i = 0; i < posAttr.count; i++) {
+var vx = posAttr.getX(i);
+var vz = posAttr.getZ(i);
+var vy = getTerrainHeight(vx, vz);
+posAttr.setY(i, vy);
+}
+terrainGeo.computeVertexNormBerikut adalah game panah 3D lengkap dengan target balon dalam satu berkas HTML. Game ini menggunakan Three.js untuk rendering 3D, dilengkapi dengan efek lineart outline, visual padang rumput, bukit, pohon, matahari, angin, burung, bidikan aim trajectory, serta kamera POV yang mengikuti anak panah saat ditembakkan.
+
+Seluruh kontrol dilakukan menggunakan analog virtual dan geser layar tanpa tombol maupun teks sama sekali di dalam game.
+
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>3D Archery Game</title>
+<style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+outline: none;
+}
+html, body {
+width: 100%;
+height: 100%;
+overflow: hidden;
+background-color: #000000;
+touch-action: none;
+font-family: sans-serif;
+}
+#canvas-container {
+width: 100vw;
+height: 100vh;
+position: absolute;
+left: 0;
+top: 0;
+z-index: 1;
+}
+#ui-layer {
+width: 100vw;
+height: 100vh;
+position: absolute;
+left: 0;
+top: 0;
+z-index: 2;
+pointer-events: none;
+}
+#joystick-base {
+position: absolute;
+bottom: 50px;
+left: 50px;
+width: 120px;
+height: 120px;
+background: rgba(255, 255, 255, 0.15);
+border: 3px solid rgba(255, 255, 255, 0.4);
+border-radius: 50%;
+pointer-events: auto;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+#joystick-stick {
+width: 50px;
+height: 50px;
+background: rgba(255, 255, 255, 0.6);
+border: 2px solid rgba(255, 255, 255, 0.9);
+border-radius: 50%;
+position: absolute;
+transition: transform 0.05s ease-out;
+}
+#reticle {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 24px;
+height: 24px;
+pointer-events: none;
+}
+#reticle::before, #reticle::after {
+content: '';
+position: absolute;
+background: rgba(255, 255, 255, 0.8);
+}
+#reticle::before {
+top: 11px;
+left: 0;
+width: 24px;
+height: 2px;
+}
+#reticle::after {
+top: 0;
+left: 11px;
+width: 2px;
+height: 24px;
+}
+</style>
+<script src="[https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js](https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js)"></script>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="ui-layer">
+<div id="joystick-base">
+<div id="joystick-stick"></div>
+</div>
+<div id="reticle"></div>
+</div>
+<script>
+let container;
+let camera;
+let scene;
+let renderer;
+let gameLevel = 1;
+let gameState = 'AIMING';
+let balloonMesh;
+let balloonString;
+let balloonBasket;
+let balloonPosition = new THREE.Vector3();
+let balloonBaseDistance = 25;
+let bowGroup;
+let bowStringMesh;
+let arrowMesh;
+let trajectoryLine;
+let trajectoryPoints = [];
+let maxTrajectoryPoints = 60;
+let arrowVelocity = new THREE.Vector3();
+let arrowGravity = 9.81;
+let windVector = new THREE.Vector3();
+let windParticles;
+let windParticleGeom;
+let windCount = 150;
+let birdsGroup = [];
+let treesGroup = [];
+let hillsGroup = [];
+let popParticles = [];
+let joyBase = document.getElementById('joystick-base');
+let joyStick = document.getElementById('joystick-stick');
+let joyActive = false;
+let joyTouchId = null;
+let joyCenter = { x: 0, y: 0 };
+let joyVector = { x: 0, y: 0 };
+let joyRadius = 50;
+let touchLookId = null;
+let lastTouchPos = { x: 0, y: 0 };
+let aimYaw = 0;
+let aimPitch = 0;
+let bowPullAmount = 0;
+let arrowInitialPos = new THREE.Vector3();
+let arrowFlightTime = 0;
+let cameraDefaultPos = new THREE.Vector3(0, 1.7, 0);
+let cameraDefaultTarget = new THREE.Vector3(0, 1.7, -10);
+let cameraCurrentPos = new THREE.Vector3();
+let cameraCurrentTarget = new THREE.Vector3();
+let toonMaterials = {};
+
+function init() {
+container = document.getElementById('canvas-container');
+scene = new THREE.Scene();
+scene.background = new THREE.Color(0x7ec0ee);
+scene.fog = new THREE.FogExp2(0x7ec0ee, 0.008);
+
+camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+cameraCurrentPos.copy(cameraDefaultPos);
+camera.position.copy(cameraCurrentPos);
+
+renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+setupLighting();
+initMaterials();
+createTerrain();
+createHills();
+createTrees();
+createSun();
+createBirds();
+createWind();
+createBowAndArrow();
+createTrajectoryLine();
+spawnBalloon();
+
+setupControls();
+window.addEventListener('resize', onWindowResize, false);
+animate();
+}
+
+function initMaterials() {
+toonMaterials.grass = new THREE.MeshToonMaterial({ color: 0x4e8d3e });
+toonMaterials.dirt = new THREE.MeshToonMaterial({ color: 0x7a5330 });
+toonMaterials.trunk = new THREE.MeshToonMaterial({ color: 0x5a3d28 });
+toonMaterials.leaves1 = new THREE.MeshToonMaterial({ color: 0x2d6a4f });
+toonMaterials.leaves2 = new THREE.MeshToonMaterial({ color: 0x40916c });
+toonMaterials.hill = new THREE.MeshToonMaterial({ color: 0x3b7a30 });
+toonMaterials.balloon = new THREE.MeshToonMaterial({ color: 0xe63946 });
+toonMaterials.balloonKnot = new THREE.MeshToonMaterial({ color: 0xd62828 });
+toonMaterials.wood = new THREE.MeshToonMaterial({ color: 0x8d5b4c });
+toonMaterials.metal = new THREE.MeshToonMaterial({ color: 0xcccccc });
+toonMaterials.feather = new THREE.MeshToonMaterial({ color: 0xf1faee });
+toonMaterials.sun = new THREE.MeshBasicMaterial({ color: 0xffea00 });
+toonMaterials.bird = new THREE.MeshBasicMaterial({ color: 0x222222 });
+toonMaterials.string = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+}
+
+function addLineOutline(mesh, colorHex = 0x111111) {
+let edges = new THREE.EdgesGeometry(mesh.geometry, 30);
+let lineMat = new THREE.LineBasicMaterial({ color: colorHex, linewidth: 1.5 });
+let line = new THREE.LineSegments(edges, lineMat);
+mesh.add(line);
+}
+
+function setupLighting() {
+let ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+let dirLight = new THREE.DirectionalLight(0xfffaed, 0.9);
+dirLight.position.set(100, 150, 50);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.camera.near = 0.5;
+dirLight.shadow.camera.far = 500;
+let d = 100;
+dirLight.shadow.camera.left = -d;
+dirLight.shadow.camera.right = d;
+dirLight.shadow.camera.top = d;
+dirLight.shadow.camera.bottom = -d;
+scene.add(dirLight);
+}
+
+function createTerrain() {
+let size = 400;
+let geom = new THREE.PlaneGeometry(size, size, 64, 64);
+geom.rotateX(-Math.PI / 2);
+
+let pos = geom.attributes.position;
+for (let i = 0; i < pos.count; i++) {
+let x = pos.getX(i);
+let z = pos.getZ(i);
+let y = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.8;
+if (Math.abs(x) < 15 && Math.abs(z) < 15) {
+y = 0;
+}
+pos.setY(i, y);
+}
+geom.computeVertexNormals();
+
+let terrain = new THREE.Mesh(geom, toonMaterials.grass);
+terrain.receiveShadow = true;
+terrain.position.y = 0;
+scene.add(terrain);
+
+let gridHelper = new THREE.GridHelper(size, 80, 0x2d5a27, 0x3b7a30);
+gridHelper.position.y = 0.01;
+scene.add(gridHelper);
+}
+
+function createHills() {
+let hillGeom = new THREE.ConeGeometry(30, 20, 8);
+for (let i = 0; i < 12; i++) {
+let hill = new THREE.Mesh(hillGeom, toonMaterials.hill);
+let angle = (i / 12) * Math.PI * 2;
+let dist = 120 + Math.random() * 40;
+hill.position.x = Math.cos(angle) * dist;
+hill.position.z = Math.sin(angle) * dist;
+hill.position.y = 5;
+hill.scale.set(1 + Math.random(), 0.8 + Math.random() * 0.5, 1 + Math.random());
+hill.castShadow = true;
+hill.receiveShadow = true;
+addLineOutline(hill, 0x1d4a17);
+scene.add(hill);
+hillsGroup.push(hill);
+}
+}
+
+function createTrees() {
+for (let i = 0; i < 35; i++) {
+let tree = new THREE.Group();
+let trunkGeom = new THREE.CylinderGeometry(0.4, 0.7, 4, 6);
+let trunk = new THREE.Mesh(trunkGeom, toonMaterials.trunk);
+trunk.position.y = 2;
+trunk.castShadow = true;
+trunk.receiveShadow = true;
+addLineOutline(trunk, 0x2a1a10);
+tree.add(trunk);
+
+let leavesGeom = new THREE.DodecahedronGeometry(2.5, 1);
+let leavesMat = Math.random() > 0.5 ? toonMaterials.leaves1 : toonMaterials.leaves2;
+let leaves = new THREE.Mesh(leavesGeom, leavesMat);
+leaves.position.y = 4.5;
+leaves.castShadow = true;
+leaves.receiveShadow = true;
+addLineOutline(leaves, 0x0f3822);
+tree.add(leaves);
+
+let angle = Math.random() * Math.PI * 2;
+let dist = 25 + Math.random() * 90;
+tree.position.x = Math.cos(angle) * dist;
+tree.position.z = Math.sin(angle) * dist;
+if (Math.abs(tree.position.x) < 8 && tree.position.z < 0 && tree.position.z > -150) {
+tree.position.x += 15;
+}
+tree.position.y = 0;
+scene.add(tree);
+treesGroup.push(tree);
+}
+}
+
+function createSun() {
+let sunGeom = new THREE.SphereGeometry(12, 16, 16);
+let sunMesh = new THREE.Mesh(sunGeom, toonMaterials.sun);
+sunMesh.position.set(120, 160, -200);
+scene.add(sunMesh);
+}
+
+function createBirds() {
+for (let i = 0; i < 8; i++) {
+let birdGroup = new THREE.Group();
+let wingGeom = new THREE.BufferGeometry();
+let vertices = new Float32Array([
+-1.2, 0, 0,
+0, 0, 0.4,
+0, 0, -0.4,
+1.2, 0, 0,
+0, 0, 0.4,
+0, 0, -0.4
+]);
+wingGeom.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+let birdMesh = new THREE.Mesh(wingGeom, toonMaterials.bird);
+birdGroup.add(birdMesh);
+
+birdGroup.position.set(
+(Math.random() - 0.5) * 100,
+20 + Math.random() * 20,
+-30 - Math.random() * 80
+);
+birdGroup.userData = {
+speed: 0.1 + Math.random() * 0.1,
+amplitude: 0.3 + Math.random() * 0.3,
+phase: Math.random() * Math.PI * 2,
+mesh: birdMesh
+};
+scene.add(birdGroup);
+birdsGroup.push(birdGroup);
+}
+}
+
+function createWind() {
+windParticleGeom = new THREE.BufferGeometry();
+let positions = new Float32Array(windCount * 3);
+for (let i = 0; i < windCount; i++) {
+positions[i * 3] = (Math.random() - 0.5) * 100;
+positions[i * 3 + 1] = Math.random() * 20;
+positions[i * 3 + 2] = (Math.random() - 0.5) * 100 - 30;
+}
+windParticleGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+let windMat = new THREE.PointsMaterial({
+color: 0xffffff,
+size: 0.25,
+transparent: true,
+opacity: 0.4
+});
+windParticles = new THREE.Points(windParticleGeom, windMat);
+scene.add(windParticles);
+
+updateWindForce();
+}
+
+function updateWindForce() {
+let angle = Math.random() * Math.PI * 2;
+let strength = 0.5 + Math.random() * 2.5;
+windVector.set(Math.cos(angle) * strength, 0, Math.sin(angle) * strength);
+}
+
+function createBowAndArrow() {
+bowGroup = new THREE.Group();
+
+let curve = new THREE.CatmullRomCurve3([
+new THREE.Vector3(0, 0.8, 0.1),
+new THREE.Vector3(0, 0.4, -0.15),
+new THREE.Vector3(0, 0, -0.2),
+new THREE.Vector3(0, -0.4, -0.15),
+new THREE.Vector3(0, -0.8, 0.1)
+]);
+let bowGeom = new THREE.TubeGeometry(curve, 20, 0.03, 8, false);
+let bowMesh = new THREE.Mesh(bowGeom, toonMaterials.wood);
+bowMesh.castShadow = true;
+addLineOutline(bowMesh, 0x2a1a10);
+bowGroup.add(bowMesh);
+
+let stringGeom = new THREE.BufferGeometry();
+let stringPositions = new Float32Array([
+0, 0.8, 0.1,
+0, 0, -0.2,
+0, -0.8, 0.1
+]);
+stringGeom.setAttribute('position', new THREE.BufferAttribute(stringPositions, 3));
+bowStringMesh = new THREE.Line(stringGeom, toonMaterials.string);
+bowGroup.add(bowStringMesh);
+
+arrowMesh = createArrowMesh();
+bowGroup.add(arrowMesh);
+
+bowGroup.position.set(0.2, 1.4, -0.6);
+scene.add(bowGroup);
+}
+
+function createArrowMesh() {
+let arrow = new THREE.Group();
+
+let shaftGeom = new THREE.CylinderGeometry(0.012, 0.012, 0.9, 8);
+shaftGeom.rotateX(Math.PI / 2);
+let shaft = new THREE.Mesh(shaftGeom, toonMaterials.wood);
+shaft.position.z = -0.45;
+shaft.castShadow = true;
+addLineOutline(shaft, 0x1a1008);
+arrow.add(shaft);
+
+let tipGeom = new THREE.ConeGeometry(0.025, 0.1, 8);
+tipGeom.rotateX(-Math.PI / 2);
+let tip = new THREE.Mesh(tipGeom, toonMaterials.metal);
+tip.position.z = -0.95;
+tip.castShadow = true;
+addLineOutline(tip, 0x333333);
+arrow.add(tip);
+
+for (let i = 0; i < 3; i++) {
+let featherGeom = new THREE.BoxGeometry(0.002, 0.04, 0.12);
+let feather = new THREE.Mesh(featherGeom, toonMaterials.feather);
+feather.rotation.z = (i * Math.PI * 2) / 3;
+feather.position.y = Math.sin((i * Math.PI * 2) / 3) * 0.025;
+feather.position.x = Math.cos((i * Math.PI * 2) / 3) * 0.025;
+feather.position.z = -0.06;
+arrow.add(feather);
+}
+
+return arrow;
+}
+
+function createTrajectoryLine() {
+let lineGeom = new THREE.BufferGeometry();
+let positions = new Float32Array(maxTrajectoryPoints * 3);
+lineGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+let lineMat = new THREE.LineDashedMaterial({
+color: 0xffffff,
+dashSize: 0.2,
+gapSize: 0.1,
+linewidth: 2,
+transparent: true,
+opacity: 0.7
+});
+trajectoryLine = new THREE.Line(lineGeom, lineMat);
+trajectoryLine.frustumCulled = false;
+scene.add(trajectoryLine);
+}
+
+function spawnBalloon() {
+if (balloonMesh) {
+scene.remove(balloonMesh);
+}
+
+let group = new THREE.Group();
+
+let balloonGeom = new THREE.SphereGeometry(1.2, 16, 16);
+balloonGeom.scale(1, 1.3, 1);
+let bMesh = new THREE.Mesh(balloonGeom, toonMaterials.balloon);
+bMesh.castShadow = true;
+bMesh.receiveShadow = true;
+addLineOutline(bMesh, 0x800000);
+group.add(bMesh);
+
+let knotGeom = new THREE.ConeGeometry(0.2, 0.3, 8);
+let knot = new THREE.Mesh(knotGeom, toonMaterials.balloonKnot);
+knot.position.y = -1.5;
+group.add(knot);
+
+let stringGeom = new THREE.BufferGeometry();
+let stringPos = new Float32Array([
+0, -1.6, 0,
+0, -3.5, 0
+]);
+stringGeom.setAttribute('position', new THREE.BufferAttribute(stringPos, 3));
+let strLine = new THREE.Line(stringGeom, toonMaterials.string);
+group.add(strLine);
+
+let distance = balloonBaseDistance + (gameLevel - 1) * 12;
+let sideOffset = (Math.random() - 0.5) * (10 + gameLevel * 2);
+
+balloonPosition.set(sideOffset, 2 + Math.random() * 3, -distance);
+group.position.copy(balloonPosition);
+
+balloonMesh = group;
+scene.add(balloonMesh);
+
+updateWindForce();
+}
+
+function setupControls() {
+window.addEventListener('touchstart', onTouchStart, { passive: false });
+window.addEventListener('touchmove', onTouchMove, { passive: false });
+window.addEventListener('touchend', onTouchEnd, { passive: false });
+window.addEventListener('mousedown', onMouseDown, false);
+window.addEventListener('mousemove', onMouseMove, false);
+window.addEventListener('mouseup', onMouseUp, false);
+}
+
+function onTouchStart(e) {
+e.preventDefault();
+for (let i = 0; i < e.changedTouches.length; i++) {
+let touch = e.changedTouches[i];
+let x = touch.clientX;
+let y = touch.clientY;
+
+if (x < window.innerWidth * 0.45 && y > window.innerHeight * 0.4) {
+if (!joyActive) {
+joyActive = true;
+joyTouchId = touch.identifier;
+joyCenter.x = x;
+joyCenter.y = y;
+joyBase.style.left = (x - 60) + 'px';
+joyBase.style.top = (y - 60) + 'px';
+joyStick.style.transform = 'translate(0px, 0px)';
+}
+} else {
+if (touchLookId === null) {
+touchLookId = touch.identifier;
+lastTouchPos.x = x;
+lastTouchPos.y = y;
+}
+}
+}
+}
+
+function onTouchMove(e) {
+e.preventDefault();
+for (let i = 0; i < e.changedTouches.length; i++) {
+let touch = e.changedTouches[i];
+if (touch.identifier === joyTouchId && joyActive) {
+let dx = touch.clientX - joyCenter.x;
+let dy = touch.clientY - joyCenter.y;
+let dist = Math.sqrt(dx * dx + dy * dy);
+if (dist > joyRadius) {
+dx = (dx / dist) * joyRadius;
+dy = (dy / dist) * joyRadius;
+}
+joyVector.x = dx / joyRadius;
+joyVector.y = dy / joyRadius;
+joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
+
+if (gameState === 'AIMING') {
+bowPullAmount = Math.max(0, joyVector.y);
+}
+} else if (touch.identifier === touchLookId) {
+let dx = touch.clientX - lastTouchPos.x;
+let dy = touch.clientY - lastTouchPos.y;
+lastTouchPos.x = touch.clientX;
+lastTouchPos.y = touch.clientY;
+
+if (gameState === 'AIMING') {
+aimYaw -= dx * 0.004;
+aimPitch -= dy * 0.004;
+aimPitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, aimPitch));
+}
+}
+}
+}
+
+function onTouchEnd(e) {
+e.preventDefault();
+for (let i = 0; i < e.changedTouches.length; i++) {
+let touch = e.changedTouches[i];
+if (touch.identifier === joyTouchId) {
+joyActive = false;
+joyTouchId = null;
+joyVector.x = 0;
+joyVector.y = 0;
+joyStick.style.transform = 'translate(0px, 0px)';
+
+if (gameState === 'AIMING' && bowPullAmount > 0.2) {
+fireArrow();
+}
+bowPullAmount = 0;
+} else if (touch.identifier === touchLookId) {
+touchLookId = null;
+}
+}
+}
+
+let isMouseDown = false;
+function onMouseDown(e) {
+if (e.clientX < window.innerWidth * 0.45 && e.clientY > window.innerHeight * 0.4) {
+joyActive = true;
+joyCenter.x = e.clientX;
+joyCenter.y = e.clientY;
+joyBase.style.left = (e.clientX - 60) + 'px';
+joyBase.style.top = (e.clientY - 60) + 'px';
+joyStick.style.transform = 'translate(0px, 0px)';
+} else {
+isMouseDown = true;
+lastTouchPos.x = e.clientX;
+lastTouchPos.y = e.clientY;
+}
+}
+
+function onMouseMove(e) {
+if (joyActive) {
+let dx = e.clientX - joyCenter.x;
+let dy = e.clientY - joyCenter.y;
+let dist = Math.sqrt(dx * dx + dy * dy);
+if (dist > joyRadius) {
+dx = (dx / dist) * joyRadius;
+dy = (dy / dist) * joyRadius;
+}
+joyVector.x = dx / joyRadius;
+joyVector.y = dy / joyRadius;
+joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
+
+if (gameState === 'AIMING') {
+bowPullAmount = Math.max(0, joyVector.y);
+}
+} else if (isMouseDown) {
+let dx = e.clientX - lastTouchPos.x;
+let dy = e.clientY - lastTouchPos.y;
+lastTouchPos.x = e.clientX;
+lastTouchPos.y = e.clientY;
+
+if (gameState === 'AIMING') {
+aimYaw -= dx * 0.004;
+aimPitch -= dy * 0.004;
+aimPitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, aimPitch));
+}
+}
+}
+
+function onMouseUp(e) {
+if (joyActive) {
+joyActive = false;
+joyVector.x = 0;
+joyVector.y = 0;
+joyStick.style.transform = 'translate(0px, 0px)';
+
+if (gameState === 'AIMING' && bowPullAmount > 0.2) {
+fireArrow();
+}
+bowPullAmount = 0;
+}
+isMouseDown = false;
+}
+
+function fireArrow() {
+gameState = 'FLYING';
+arrowFlightTime = 0;
+
+let firePower = 20 + bowPullAmount * 40;
+let dir = new THREE.Vector3(0, 0, -1);
+let euler = new THREE.Euler(aimPitch, aimYaw, 0, 'YXZ');
+dir.applyEuler(euler);
+
+arrowVelocity.copy(dir).multiplyScalar(firePower);
+
+let worldPos = new THREE.Vector3();
+arrowMesh.getWorldPosition(worldPos);
+scene.attach(arrowMesh);
+arrowMesh.position.copy(worldPos);
+arrowInitialPos.copy(worldPos);
+
+trajectoryLine.visible = false;
+}
+
+function updateTrajectory() {
+if (gameState !== 'AIMING') return;
+
+let firePower = 20 + bowPullAmount * 40;
+let dir = new THREE.Vector3(0, 0, -1);
+let euler = new THREE.Euler(aimPitch, aimYaw, 0, 'YXZ');
+dir.applyEuler(euler);
+
+let simVel = dir.clone().multiplyScalar(firePower);
+let simPos = new THREE.Vector3();
+arrowMesh.getWorldPosition(simPos);
+
+let positions = trajectoryLine.geometry.attributes.position.array;
+let dt = 0.04;
+
+for (let i = 0; i < maxTrajectoryPoints; i++) {
+positions[i * 3] = simPos.x;
+positions[i * 3 + 1] = simPos.y;
+positions[i * 3 + 2] = simPos.z;
+
+simVel.y -= arrowGravity * dt;
+simVel.x += windVector.x * dt * 0.1;
+simVel.z += windVector.z * dt * 0.1;
+
+simPos.x += simVel.x * dt;
+simPos.y += simVel.y * dt;
+simPos.z += simVel.z * dt;
+
+if (simPos.y < 0) {
+for (let j = i; j < maxTrajectoryPoints; j++) {
+positions[j * 3] = simPos.x;
+positions[j * 3 + 1] = 0;
+positions[j * 3 + 2] = simPos.z;
+}
+break;
+}
+}
+
+trajectoryLine.geometry.attributes.position.needsUpdate = true;
+trajectoryLine.computeLineDistances();
+trajectoryLine.visible = bowPullAmount > 0.05;
+}
+
+function updateBowAndArrow() {
+if (gameState === 'AIMING') {
+bowGroup.rotation.set(0, 0, 0);
+bowGroup.rotation.y = aimYaw;
+bowGroup.rotation.x = aimPitch;
+
+if (joyActive && joyVector.x !== 0) {
+aimYaw -= joyVector.x * 0.015;
+}
+
+let pullOffset = bowPullAmount * 0.4;
+arrowMesh.position.set(0, 0, pullOffset);
+
+let pos = bowStringMesh.geometry.attributes.position.array;
+pos[3] = 0;
+pos[4] = 0;
+pos[5] = -0.2 + pullOffset;
+bowStringMesh.geometry.attributes.position.needsUpdate = true;
+}
+}
+
+function updateArrowFlight(delta) {
+if (gameState !== 'FLYING') return;
+
+arrowFlightTime += delta;
+
+arrowVelocity.y -= arrowGravity * delta;
+arrowVelocity.x += windVector.x * delta * 0.2;
+arrowVelocity.z += windVector.z * delta * 0.2;
+
+arrowMesh.position.x += arrowVelocity.x * delta;
+arrowMesh.position.y += arrowVelocity.y * delta;
+arrowMesh.position.z += arrowVelocity.z * delta;
+
+let lookTarget = arrowMesh.position.clone().add(arrowVelocity);
+arrowMesh.lookAt(lookTarget);
+
+let camOffset = arrowVelocity.clone().normalize().multiplyScalar(-2.5);
+camOffset.y += 0.6;
+cameraCurrentPos.copy(arrowMesh.position).add(camOffset);
+if (cameraCurrentPos.y < 0.2) cameraCurrentPos.y = 0.2;
+
+cameraCurrentTarget.copy(arrowMesh.position).add(arrowVelocity.clone().normalize().multiplyScalar(5));
+camera.position.copy(cameraCurrentPos);
+camera.lookAt(cameraCurrentTarget);
+
+checkCollisions();
+}
+
+function checkCollisions() {
+let arrowPos = arrowMesh.position;
+
+if (balloonMesh) {
+let dist = arrowPos.distanceTo(balloonMesh.position);
+if (dist < 1.8) {
+popBalloon();
+resetAfterShot(true);
+return;
+}
+}
+
+if (arrowPos.y <= 0.1) {
+arrowPos.y = 0.1;
+createImpactEffect(arrowPos);
+resetAfterShot(false);
+return;
+}
+
+for (let tree of treesGroup) {
+let trunkPos = new THREE.Vector3();
+tree.children[0].getWorldPosition(trunkPos);
+if (Math.abs(arrowPos.x - trunkPos.x) < 0.8 && Math.abs(arrowPos.z - trunkPos.z) < 0.8 && arrowPos.y < 5) {
+createImpactEffect(arrowPos);
+resetAfterShot(false);
+return;
+}
+}
+
+if (arrowPos.z < -250 || Math.abs(arrowPos.x) > 150) {
+resetAfterShot(false);
+}
+}
+
+function popBalloon() {
+let pos = balloonMesh.position.clone();
+scene.remove(balloonMesh);
+balloonMesh = null;
+
+for (let i = 0; i < 30; i++) {
+let pGeom = new THREE.BufferGeometry();
+let pMat = new THREE.MeshBasicMaterial({ color: 0xe63946 });
+let pMesh = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.15), pMat);
+pMesh.position.copy(pos);
+
+let vel = new THREE.Vector3(
+(Math.random() - 0.5) * 8,
+(Math.random() - 0.5) * 8,
+(Math.random() - 0.5) * 8
+);
+
+popParticles.push({ mesh: pMesh, vel: vel, life: 1.0 });
+scene.add(pMesh);
+}
+}
+
+function createImpactEffect(pos) {
+for (let i = 0; i < 10; i++) {
+let pMat = new THREE.MeshBasicMaterial({ color: 0x7a5330 });
+let pMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), pMat);
+pMesh.position.copy(pos);
+
+let vel = new THREE.Vector3(
+(Math.random() - 0.5) * 3,
+Math.random() * 3,
+(Math.random() - 0.5) * 3
+);
+
+popParticles.push({ mesh: pMesh, vel: vel, life: 0.6 });
+scene.add(pMesh);
+}
+}
+
+function updateParticles(delta) {
+for (let i = popParticles.length - 1; i >= 0; i--) {
+let p = popParticles[i];
+p.life -= delta * 1.5;
+p.mesh.position.addScaledVector(p.vel, delta);
+p.vel.y -= 9.8 * delta;
+
+if (p.life <= 0) {
+scene.remove(p.mesh);
+popParticles.splice(i, 1);
+}
+}
+}
+
+function resetAfterShot(isHit) {
+gameState = 'RESETTING';
+
+if (isHit) {
+gameLevel++;
+}
+
+setTimeout(() => {
+bowGroup.add(arrowMesh);
+arrowMesh.position.set(0, 0, 0);
+arrowMesh.rotation.set(0, 0, 0);
+
+let pos = bowStringMesh.geometry.attributes.position.array;
+pos[3] = 0;
+pos[4] = 0;
+pos[5] = -0.2;
+bowStringMesh.geometry.attributes.position.needsUpdate = true;
+
+if (isHit || !balloonMesh) {
+spawnBalloon();
+}
+
+gameState = 'AIMING';
+}, 1200);
+}
+
+function updateEnvironment(delta, time) {
+let pos = windParticleGeom.attributes.position.array;
+for (let i = 0; i < windCount; i++) {
+pos[i * 3] += windVector.x * delta * 2;
+pos[i * 3 + 2] += windVector.z * delta * 2;
+
+if (pos[i * 3] > 50) pos[i * 3] = -50;
+if (pos[i * 3] < -50) pos[i * 3] = 50;
+if (pos[i * 3 + 2] > 20) pos[i * 3 + 2] = -100;
+if (pos[i * 3 + 2] < -100) pos[i * 3 + 2] = 20;
+}
+windParticleGeom.attributes.position.needsUpdate = true;
+
+for (let bird of birdsGroup) {
+bird.position.x += bird.userData.speed;
+bird.position.y += Math.sin(time * 2 + bird.userData.phase) * 0.02;
+
+let wingMesh = bird.userData.mesh;
+let wingPos = wingMesh.geometry.attributes.position.array;
+let flap = Math.sin(time * 8 + bird.userData.phase) * bird.userData.amplitude;
+wingPos[1] = flap;
+wingPos[10] = flap;
+wingMesh.geometry.attributes.position.needsUpdate = true;
+
+if (bird.position.x > 80) bird.position.x = -80;
+}
+
+if (balloonMesh) {
+balloonMesh.position.y = balloonPosition.y + Math.sin(time * 1.5) * 0.3;
+balloonMesh.position.x = balloonPosition.x + Math.cos(time * 1.0) * 0.2;
+balloonMesh.rotation.z = Math.sin(time * 1.2) * 0.05;
+}
+}
+
+function updateCamera() {
+if (gameState === 'AIMING' || gameState === 'RESETTING') {
+let targetCamPos = cameraDefaultPos.clone();
+let targetCamLook = new THREE.Vector3(0, 1.7, -10);
+
+let euler = new THREE.Euler(aimPitch, aimYaw, 0, 'YXZ');
+targetCamLook.sub(targetCamPos).applyEuler(euler).add(targetCamPos);
+
+cameraCurrentPos.lerp(targetCamPos, 0.1);
+cameraCurrentTarget.lerp(targetCamLook, 0.1);
+
+camera.position.copy(cameraCurrentPos);
+camera.lookAt(cameraCurrentTarget);
+}
+}
+
+let lastTime = performance.now();
+function animate() {
+requestAnimationFrame(animate);
+
+let now = performance.now();
+let delta = (now - lastTime) / 1000;
+let time = now / 1000;
+lastTime = now;
+
+if (delta > 0.1) delta = 0.1;
+
+updateBowAndArrow();
+updateTrajectory();
+updateArrowFlight(delta);
+updateParticles(delta);
+updateEnvironment(delta, time);
+updateCamera();
+
+renderer.render(scene, camera);
+}
+
+function onWindowResize() {
+camera.aspect = window.innerWidth / window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
