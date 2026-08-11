@@ -24,7 +24,7 @@
       touch-action: none;
       overscroll-behavior: none;
     }
-    #screen-offline, #screen-games, #screen-event {
+    #screen-offline, #screen-games, #screen-event, #screen-animasi {
       width: 100vw;
       height: calc(100vh - 60px);
       display: none;
@@ -48,6 +48,16 @@
     #screen-event {
       justify-content: center;
       padding: 20px;
+    }
+    #screen-animasi {
+      padding: 0;
+      margin: 0;
+      border: none;
+    }
+    #iframe-animasi {
+      width: 100%;
+      height: 100%;
+      border: none;
     }
     h1 {
       margin-bottom: 20px;
@@ -102,7 +112,7 @@
       color: #888888;
       background: none;
       border: none;
-      width: 50%;
+      width: 33.33%;
       height: 100%;
       cursor: pointer;
       font-size: 10px;
@@ -128,9 +138,17 @@
   <div id="screen-games">
     <h1></h1>
     <div class="game-list">      
+      <a href="Game/Petualangan suki/index.html" class="game-card">
+        <img src="" alt="Petualangan suki">
+        <span class="game-title">Petualangan suki</span>
+      </a>
       <a href="Game/Project catur 3d/index.html" class="game-card">
         <img src="Project catur 3d.jpg" alt="Project catur 3d">
         <span class="game-title">Project catur 3d</span>
+      </a>
+      <a href="Game/Suki plane 2/index.html" class="game-card">
+        <img src="" alt="Suki plane 2">
+        <span class="game-title">Suki plane 2</span>
       </a>
       <a href="Game/Suki plane/index.html" class="game-card">
         <img src="Suki plane.jpg" alt="Suki plane">
@@ -142,6 +160,10 @@
   <div id="screen-event">
   </div>
 
+  <div id="screen-animasi">
+    <iframe id="iframe-animasi" src=""></iframe>
+  </div>
+
   <nav class="bottom-nav" id="main-nav">
     <button class="nav-item active" onclick="switchTab('screen-games', this)">
       <svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
@@ -150,6 +172,10 @@
     <button class="nav-item" onclick="switchTab('screen-event', this)">
       <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
       <span>Event</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('screen-animasi', this)">
+      <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
+      <span>Animasi kedatangan</span>
     </button>
   </nav>
 
@@ -164,6 +190,23 @@
 
     let activeTabId = 'screen-games';
 
+    const asetList = [
+      'Animasi kedatangan/Aset1/index.html',
+      'Animasi kedatangan/Aset2/index.html',
+      'Animasi kedatangan/Aset3/index.html',
+      'Animasi kedatangan/Aset4/index.html'
+    ];
+
+    function loadSavedAnimasi() {
+      let savedIndex = localStorage.getItem('selected_animasi_index');
+      if (savedIndex === null) {
+        savedIndex = Math.floor(Math.random() * asetList.length);
+        localStorage.setItem('selected_animasi_index', savedIndex);
+      }
+      const iframe = document.getElementById('iframe-animasi');
+      iframe.src = asetList[savedIndex];
+    }
+
     function switchTab(screenId, element) {
       activeTabId = screenId;
       if (!navigator.onLine) {
@@ -173,6 +216,7 @@
       
       document.getElementById('screen-games').style.display = 'none';
       document.getElementById('screen-event').style.display = 'none';
+      document.getElementById('screen-animasi').style.display = 'none';
 
       document.getElementById(screenId).style.display = 'flex';
 
@@ -193,6 +237,7 @@
         
         document.getElementById('screen-games').style.display = 'none';
         document.getElementById('screen-event').style.display = 'none';
+        document.getElementById('screen-animasi').style.display = 'none';
 
         document.getElementById(activeTabId).style.display = 'flex';
       } else {
@@ -201,12 +246,14 @@
         
         document.getElementById('screen-games').style.display = 'none';
         document.getElementById('screen-event').style.display = 'none';
+        document.getElementById('screen-animasi').style.display = 'none';
       }
     }
 
     window.addEventListener('online', checkConnection);
     window.addEventListener('offline', checkConnection);
     
+    loadSavedAnimasi();
     switchTab('screen-games', document.querySelectorAll('.nav-item')[0]);
     checkConnection();
   </script>
