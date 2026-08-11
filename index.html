@@ -170,7 +170,7 @@
       <span>Daftar Game</span>
     </button>
     <button class="nav-item" onclick="switchTab('screen-event', this)">
-      <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1 V1h-2zm3 18H5V8h14v11z"/></svg>
       <span>Event</span>
     </button>
     <button class="nav-item" onclick="switchTab('screen-animasi', this)">
@@ -181,7 +181,11 @@
 
   <script>
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
-    document.addEventListener('dblclick', function (e) { e.preventDefault(); });
+    document.addEventListener('dblclick', function (e) { 
+        if (e.target.id !== 'screen-animasi' && e.target.id !== 'iframe-animasi') {
+            e.preventDefault(); 
+        }
+    });
     document.addEventListener('wheel', function (e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
 
     if ('serviceWorker' in navigator) {
@@ -189,6 +193,7 @@
     }
 
     let activeTabId = 'screen-games';
+    let currentAnimasiIndex = parseInt(localStorage.getItem('selected_animasi_index') || 0);
 
     const asetList = [
       'Animasi kedatangan/Aset1/index.html',
@@ -197,15 +202,16 @@
       'Animasi kedatangan/Aset4/index.html'
     ];
 
-    function loadSavedAnimasi() {
-      let savedIndex = localStorage.getItem('selected_animasi_index');
-      if (savedIndex === null) {
-        savedIndex = Math.floor(Math.random() * asetList.length);
-        localStorage.setItem('selected_animasi_index', savedIndex);
-      }
+    function updateAnimasi() {
       const iframe = document.getElementById('iframe-animasi');
-      iframe.src = asetList[savedIndex];
+      iframe.src = asetList[currentAnimasiIndex];
+      localStorage.setItem('selected_animasi_index', currentAnimasiIndex);
     }
+
+    document.getElementById('screen-animasi').addEventListener('dblclick', function() {
+        currentAnimasiIndex = (currentAnimasiIndex + 1) % asetList.length;
+        updateAnimasi();
+    });
 
     function switchTab(screenId, element) {
       activeTabId = screenId;
@@ -253,7 +259,7 @@
     window.addEventListener('online', checkConnection);
     window.addEventListener('offline', checkConnection);
     
-    loadSavedAnimasi();
+    updateAnimasi();
     switchTab('screen-games', document.querySelectorAll('.nav-item')[0]);
     checkConnection();
   </script>
