@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#121810">
+<title>Top-Down Racing</title>
+<style>
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+user-select: none;
+-webkit-user-select: none;
+-webkit-touch-callout: none;
+-webkit-tap-highlight-color: transparent;
+}
+html {
+width: 100%;
+height: 100%;
+overflow: hidden;
+background-color: #121810;
+}
+body {
+width: 100vw;
+height: 100vh;
+overflow: hidden;
+background-color: #121810;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+touch-action: none;
+}
+#gameCanvas {
+width: 100vw;
+height: 100vh;
+display: block;
+position: absolute;
+top: 0;
+left: 0;
+z-index: 1;
+}
+#ui-layer {
+position: absolute;
+top: 0;
+left: 0;
+width: 100vw;
+height: 100vh;
+z-index: 10;
+pointer-events: none;
+}
+.interactive {
+pointer-events: auto;
+}
+.hidden {
+display: none !important;
+}
+#hud {
+position: absolute;
+top: 16px;
+left: 16px;
+right: 16px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+z-index: 15;
+pointer-events: none;
+}
+.hud-card {
+pointer-events: auto;
+background: rgba(22, 30, 20, 0.85);
+border: 1.5px solid #2e3e2a;
+padding: 8px 16px;
+border-radius: 12px;
+display: flex;
+align-items: center;
+gap: 10px;
+color: #e2e8f0;
+font-size: 15px;
+font-weight: 700;
+backdrop-filter: blur(8px);
+box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.hud-btn {
+cursor: pointer;
+width: 42px;
+height: 42px;
+padding: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.hud-btn:active {
+transform: scale(0.92);
+background: rgba(35, 49, 32, 0.95);
+}
+.hud-btn svg {
+width: 22px;
+height: 22px;
+fill: #e2e8f0;
+}
+.hud-card svg {
+width: 20px;
+height: 20px;
+fill: #e2e8f0;
+}
+#joystick-container {
+position: absolute;
+bottom: 30px;
+left: 30px;
+width: 120px;
+height: 120px;
+z-index: 15;
+pointer-events: auto;
+touch-action: none;
+}
+#joystick-base {
+width: 100%;
+height: 100%;
+border-radius: 50%;
+background: rgba(22, 30, 20, 0.65);
+border: 2px solid #364b31;
+position: relative;
+display: flex;
+align-items: center;
+justify-content: center;
+backdrop-filter: blur(6px);
+box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+#joystick-knob {
+width: 50px;
+height: 50px;
+border-radius: 50%;
+background: #364b31;
+border: 2px solid #8fa38d;
+position: absolute;
+transform: translate(0px, 0px);
+box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+pointer-events: none;
+}
+#menu-screen {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(18, 24, 16, 0.94);
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 32px;
+z-index: 20;
+backdrop-filter: blur(12px);
+}
+.brand-container {
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 8px;
+}
+.brand-title {
+color: #e2e8f0;
+font-size: 26px;
+font-weight: 800;
+letter-spacing: 4px;
+text-transform: uppercase;
+}
+.brand-subtitle {
+color: #64748b;
+font-size: 12px;
+letter-spacing: 2px;
+text-transform: uppercase;
+}
+.profile-card {
+background: #1a2318;
+border: 1.5px solid #2d3b2a;
+padding: 10px 20px;
+border-radius: 12px;
+display: flex;
+align-items: center;
+gap: 12px;
+}
+.profile-input {
+background: transparent;
+border: none;
+color: #f1f5f9;
+padding: 4px 8px;
+font-size: 16px;
+font-weight: 600;
+text-align: center;
+outline: none;
+width: 160px;
+}
+.btn-grid {
+display: flex;
+gap: 16px;
+}
+.action-btn {
+background: #233120;
+border: 1.5px solid #364b31;
+border-radius: 14px;
+width: 80px;
+height: 80px;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: transform 0.1s ease, background-color 0.2s ease;
+}
+.action-btn:active {
+transform: scale(0.94);
+background: #2a3d26;
+}
+.action-btn svg {
+width: 32px;
+height: 32px;
+fill: #e2e8f0;
+}
+#garage-screen {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: #121810;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: space-between;
+padding: 32px 24px;
+z-index: 25;
+}
+.garage-header {
+width: 100%;
+max-width: 600px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.coin-display {
+background: #1a2318;
+border: 1.5px solid #2d3b2a;
+padding: 8px 18px;
+border-radius: 20px;
+display: flex;
+align-items: center;
+gap: 8px;
+color: #e2e8f0;
+font-size: 16px;
+font-weight: 700;
+}
+.coin-display svg {
+width: 20px;
+height: 20px;
+fill: #e2e8f0;
+}
+.car-preview-stage {
+width: 100%;
+max-width: 480px;
+height: 180px;
+background: #172015;
+border: 1.5px solid #273723;
+border-radius: 18px;
+display: flex;
+align-items: center;
+justify-content: center;
+position: relative;
+}
+#carCanvas {
+width: 220px;
+height: 140px;
+}
+.car-selector {
+display: flex;
+gap: 12px;
+width: 100%;
+max-width: 500px;
+justify-content: center;
+}
+.car-card {
+background: #1a2318;
+border: 1.5px solid #2b3928;
+border-radius: 12px;
+padding: 12px;
+width: 110px;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 6px;
+cursor: pointer;
+transition: border-color 0.2s ease;
+}
+.car-card.selected {
+border-color: #64748b;
+background: #222e1f;
+}
+.car-card.locked {
+opacity: 0.4;
+}
+.car-card-name {
+font-size: 11px;
+font-weight: 700;
+color: #e2e8f0;
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.car-card-status {
+font-size: 10px;
+font-weight: 600;
+color: #94a3b8;
+}
+.upgrade-panel {
+width: 100%;
+max-width: 500px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+background: #161e14;
+padding: 16px;
+border-radius: 16px;
+border: 1.5px solid #243321;
+}
+.upgrade-row {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+}
+.stat-label {
+color: #8fa38d;
+font-size: 11px;
+font-weight: 700;
+text-transform: uppercase;
+width: 60px;
+letter-spacing: 0.5px;
+}
+.stat-bar-container {
+flex: 1;
+height: 10px;
+background: #222e1f;
+border-radius: 5px;
+overflow: hidden;
+border: 1px solid #2e3e2a;
+}
+.stat-bar-fill {
+height: 100%;
+background: #64748b;
+width: 20%;
+transition: width 0.3s ease;
+}
+.upg-btn {
+background: #233120;
+border: 1.5px solid #364b31;
+padding: 6px 14px;
+border-radius: 8px;
+display: flex;
+align-items: center;
+gap: 6px;
+color: #e2e8f0;
+font-size: 12px;
+font-weight: 700;
+cursor: pointer;
+}
+.upg-btn.disabled {
+opacity: 0.3;
+cursor: not-allowed;
+}
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="ui-layer">
+<div id="hud">
+<div class="hud-card">
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M6 12h12" stroke="#121810" stroke-width="2"/></svg>
+<span id="hud-coins">0</span>
+</div>
+<div class="hud-card hud-btn" id="btn-hud-menu">
+<svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+</div>
+</div>
+
+<div id="joystick-container">
+<div id="joystick-base">
+<div id="joystick-knob"></div>
+</div>
+</div>
+</div>
+
+<div id="menu-screen" class="interactive">
+<div class="brand-container">
+<div class="brand-title">CIRCUIT</div>
+<div class="brand-subtitle">Top Down Racing</div>
+</div>
+
+<div class="profile-card">
+<input type="text" id="player-name-input" class="profile-input" value="Racer 1" maxlength="12">
+</div>
+
+<div class="btn-grid">
+<div class="action-btn" id="btn-play">
+<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+</div>
+<div class="action-btn" id="btn-garage">
+<svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.6C.4 7 1 10 3 12c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.4-.4.4-1.1 0-1.5z"/></svg>
+</div>
+</div>
+</div>
+
+<div id="garage-screen" class="interactive hidden">
+<div class="garage-header">
+<div class="action-btn" id="btn-garage-back" style="width:50px; height:50px; border-radius:10px;">
+<svg viewBox="0 0 24 24" style="width:24px; height:24px;"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+</div>
+<div class="coin-display">
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+<span id="garage-coins">0</span>
+</div>
+</div>
+
+<div class="car-preview-stage">
+<canvas id="carCanvas"></canvas>
+</div>
+
+<div class="car-selector" id="car-selector-container"></div>
+
+<div class="upgrade-panel">
+<div class="upgrade-row">
+<span class="stat-label">SPEED</span>
+<div class="stat-bar-container">
+<div id="stat-speed-fill" class="stat-bar-fill"></div>
+</div>
+<div class="upg-btn" id="btn-upg-speed">
+<span id="cost-speed">100</span>
+</div>
+</div>
+
+<div class="upgrade-row">
+<span class="stat-label">ACCEL</span>
+<div class="stat-bar-container">
+<div id="stat-accel-fill" class="stat-bar-fill"></div>
+</div>
+<div class="upg-btn" id="btn-upg-accel">
+<span id="cost-accel">100</span>
+</div>
+</div>
+
+<div class="upgrade-row">
+<span class="stat-label">COINS</span>
+<div class="stat-bar-container">
+<div id="stat-coin-fill" class="stat-bar-fill"></div>
+</div>
+<div class="upg-btn" id="btn-upg-coin">
+<span id="cost-coin">100</span>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const swCode = `
+self.addEventListener('install', e => self.skipWaiting());
+self.addEventListener('activate', e => self.clients.claim());
+self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+`;
+const blob = new Blob([swCode], { type: 'application/javascript' });
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register(URL.createObjectURL(blob));
+}
+
+function preventDefaults(e) {
+e.preventDefault();
+}
+window.addEventListener('touchmove', preventDefaults, { passive: false });
+window.addEventListener('wheel', preventDefaults, { passive: false });
+window.addEventListener('contextmenu', preventDefaults);
+document.addEventListener('gesturestart', preventDefaults);
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const carCanvas = document.getElementById('carCanvas');
+const carCtx = carCanvas.getContext('2d');
+
+let viewWidth = window.innerWidth;
+let viewHeight = window.innerHeight;
+
+function resize() {
+viewWidth = window.innerWidth;
+viewHeight = window.innerHeight;
+canvas.width = viewWidth;
+canvas.height = viewHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const CAR_PRESETS = [
+{
+id: 0,
+name: 'Swift',
+price: 0,
+color: '#b83b3b',
+stripeColor: '#2b2b2b',
+baseSpeed: 5.4,
+baseAccel: 0.14,
+baseCoinMult: 10
+},
+{
+id: 1,
+name: 'Blazer',
+price: 300,
+color: '#3b6cb8',
+stripeColor: '#1c2d4a',
+baseSpeed: 6.0,
+baseAccel: 0.17,
+baseCoinMult: 20
+},
+{
+id: 2,
+name: 'Phantom',
+price: 800,
+color: '#3bb85e',
+stripeColor: '#1a3d23',
+baseSpeed: 6.8,
+baseAccel: 0.20,
+baseCoinMult: 40
+}
+];
+
+let saveData = {
+playerName: 'Racer 1',
+coins: 0,
+selectedCar: 0,
+unlockedCars: [true, false, false],
+upgrades: {
+0: { speed: 1, accel: 1, coin: 1 },
+1: { speed: 1, accel: 1, coin: 1 },
+2: { speed: 1, accel: 1, coin: 1 }
+}
+};
+
+function loadGame() {
+const stored = localStorage.getItem('topdown_pwa_race_save');
+if (stored) {
+try {
+const parsed = JSON.parse(stored);
+saveData = { ...saveData, ...parsed };
+} catch(e) {}
+}
+document.getElementById('player-name-input').value = saveData.playerName;
+updateUIHeader();
+}
+
+function saveGame() {
+saveData.playerName = document.getElementById('player-name-input').value || 'Racer 1';
+localStorage.setItem('topdown_pwa_race_save', JSON.stringify(saveData));
+updateUIHeader();
+}
+
+function updateUIHeader() {
+document.getElementById('hud-coins').innerText = saveData.coins;
+document.getElementById('garage-coins').innerText = saveData.coins;
+}
+
+const waypoints = [
+{ x: 400, y: 1200 },
+{ x: 600, y: 1200 },
+{ x: 800, y: 1200 },
+{ x: 1000, y: 1190 },
+{ x: 1200, y: 1170 },
+{ x: 1400, y: 1140 },
+{ x: 1600, y: 1080 },
+{ x: 1780, y: 980 },
+{ x: 1920, y: 840 },
+{ x: 2020, y: 680 },
+{ x: 2060, y: 500 },
+{ x: 2040, y: 340 },
+{ x: 1940, y: 220 },
+{ x: 1780, y: 160 },
+{ x: 1580, y: 150 },
+{ x: 1380, y: 190 },
+{ x: 1220, y: 280 },
+{ x: 1100, y: 400 },
+{ x: 980, y: 520 },
+{ x: 840, y: 560 },
+{ x: 700, y: 520 },
+{ x: 580, y: 400 },
+{ x: 480, y: 280 },
+{ x: 340, y: 200 },
+{ x: 200, y: 240 },
+{ x: 120, y: 360 },
+{ x: 90, y: 520 },
+{ x: 90, y: 700 },
+{ x: 120, y: 880 },
+{ x: 180, y: 1020 },
+{ x: 270, y: 1130 }
+];
+
+const trackWidth = 150;
+
+let trees = [];
+let rocks = [];
+let skidmarks = [];
+let particles = [];
+
+let joystickInput = { x: 0, y: 0, active: false };
+const joystickContainer = document.getElementById('joystick-container');
+const joystickKnob = document.getElementById('joystick-knob');
+const joystickMaxRadius = 35;
+
+function setupJoystick() {
+let activeTouchId = null;
+
+function handleStart(clientX, clientY, touchId = null) {
+activeTouchId = touchId;
+handleMove(clientX, clientY);
+}
+
+function handleMove(clientX, clientY) {
+const rect = joystickContainer.getBoundingClientRect();
+const centerX = rect.left + rect.width / 2;
+const centerY = rect.top + rect.height / 2;
+
+let dx = clientX - centerX;
+let dy = clientY - centerY;
+let dist = Math.hypot(dx, dy);
+
+if (dist > joystickMaxRadius) {
+dx = (dx / dist) * joystickMaxRadius;
+dy = (dy / dist) * joystickMaxRadius;
+dist = joystickMaxRadius;
+}
+
+joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+joystickInput.x = dx / joystickMaxRadius;
+joystickInput.y = dy / joystickMaxRadius;
+joystickInput.active = dist > 5;
+}
+
+function handleEnd() {
+activeTouchId = null;
+joystickKnob.style.transform = `translate(0px, 0px)`;
+joystickInput.x = 0;
+joystickInput.y = 0;
+joystickInput.active = false;
+}
+
+joystickContainer.addEventListener('touchstart', (e) => {
+if (activeTouchId === null) {
+const touch = e.changedTouches[0];
+handleStart(touch.clientX, touch.clientY, touch.identifier);
+}
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+if (activeTouchId !== null) {
+for (let i = 0; i < e.changedTouches.length; i++) {
+if (e.changedTouches[i].identifier === activeTouchId) {
+handleMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+break;
+}
+}
+}
+}, { passive: true });
+
+window.addEventListener('touchend', (e) => {
+if (activeTouchId !== null) {
+for (let i = 0; i < e.changedTouches.length; i++) {
+if (e.changedTouches[i].identifier === activeTouchId) {
+handleEnd();
+break;
+}
+}
+}
+}, { passive: true });
+
+let isMouseDown = false;
+joystickContainer.addEventListener('mousedown', (e) => {
+isMouseDown = true;
+handleStart(e.clientX, e.clientY);
+});
+
+window.addEventListener('mousemove', (e) => {
+if (isMouseDown) {
+handleMove(e.clientX, e.clientY);
+}
+});
+
+window.addEventListener('mouseup', () => {
+if (isMouseDown) {
+isMouseDown = false;
+handleEnd();
+}
+});
+}
+setupJoystick();
+
+function initEnvironment() {
+trees = [];
+rocks = [];
+skidmarks = [];
+particles = [];
+
+const treeCount = 120;
+const rockCount = 55;
+
+for (let i = 0; i < treeCount; i++) {
+let rx = Math.random() * 2800 - 400;
+let ry = Math.random() * 2000 - 400;
+if (!isNearTrack(rx, ry, 125)) {
+trees.push({
+x: rx,
+y: ry,
+size: 24 + Math.random() * 22,
+rings: Math.floor(2 + Math.random() * 2)
+});
+}
+}
+
+for (let i = 0; i < rockCount; i++) {
+let rx = Math.random() * 2800 - 400;
+let ry = Math.random() * 2000 - 400;
+if (!isNearTrack(rx, ry, 105)) {
+rocks.push({
+x: rx,
+y: ry,
+size: 11 + Math.random() * 15,
+sides: Math.floor(5 + Math.random() * 3)
+});
+}
+}
+}
+
+function isNearTrack(px, py, minDist) {
+for (let i = 0; i < waypoints.length; i++) {
+let p1 = waypoints[i];
+let p2 = waypoints[(i + 1) % waypoints.length];
+let dist = distToSegment({ x: px, y: py }, p1, p2);
+if (dist < minDist) return true;
+}
+return false;
+}
+
+function distToSegment(p, v, w) {
+let l2 = (v.x - w.x) ** 2 + (v.y - w.y) ** 2;
+if (l2 === 0) return Math.hypot(p.x - v.x, p.y - v.y);
+let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+t = Math.max(0, Math.min(1, t));
+return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
+}
+
+function getClosestTrackPoint(p) {
+let minDist = Infinity;
+let closest = { x: p.x, y: p.y };
+for (let i = 0; i < waypoints.length; i++) {
+let p1 = waypoints[i];
+let p2 = waypoints[(i + 1) % waypoints.length];
+let l2 = (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2;
+let t = 0;
+if (l2 !== 0) {
+t = ((p.x - p1.x) * (p2.x - p1.x) + (p.y - p1.y) * (p2.y - p1.y)) / l2;
+t = Math.max(0, Math.min(1, t));
+}
+let proj = { x: p1.x + t * (p2.x - p1.x), y: p1.y + t * (p2.y - p1.y) };
+let d = Math.hypot(p.x - proj.x, p.y - proj.y);
+if (d < minDist) {
+minDist = d;
+closest = proj;
+}
+}
+return { point: closest, distance: minDist };
+}
+
+let gameState = 'MENU';
+let camera = { x: 400, y: 1200, zoom: 0.4 };
+let countdownValue = 3;
+let countdownTimer = 0;
+let cameraAnimProgress = 0;
+
+let cars = [];
+
+function createCars() {
+cars = [];
+const botColors = ['#9e4838', '#6a489e', '#388e9e', '#9e8e38', '#9e3852'];
+
+const playerPreset = CAR_PRESETS[saveData.selectedCar];
+const upg = saveData.upgrades[saveData.selectedCar];
+
+let playerSpeed = playerPreset.baseSpeed + (upg.speed - 1) * 0.45;
+let playerAccel = playerPreset.baseAccel + (upg.accel - 1) * 0.025;
+
+cars.push({
+isPlayer: true,
+name: saveData.playerName,
+color: playerPreset.color,
+stripeColor: playerPreset.stripeColor,
+x: 350,
+y: 1170,
+angle: 0,
+speed: 0,
+maxSpeed: playerSpeed,
+accel: playerAccel,
+targetWp: 1,
+offset: 0,
+lap: 1,
+nextCp: 1,
+width: 36,
+height: 20,
+coinMult: playerPreset.baseCoinMult * upg.coin
+});
+
+for (let i = 0; i < 5; i++) {
+let gridX = 350 - (i + 1) * 45;
+let gridY = 1170 + ((i % 2 === 0) ? 22 : -22);
+cars.push({
+isPlayer: false,
+name: 'Bot ' + (i + 1),
+color: botColors[i],
+stripeColor: '#1a1a1a',
+x: gridX,
+y: gridY,
+angle: 0,
+speed: 0,
+maxSpeed: playerSpeed * (0.86 + Math.random() * 0.2),
+accel: playerAccel * 0.92,
+targetWp: 1,
+offset: (Math.random() - 0.5) * 55,
+lap: 1,
+nextCp: 1,
+width: 36,
+height: 20,
+coinMult: 0
+});
+}
+}
+
+function startRaceSequence() {
+saveGame();
+initEnvironment();
+createCars();
+gameState = 'COUNTDOWN';
+countdownValue = 3;
+countdownTimer = 0;
+cameraAnimProgress = 0;
+document.getElementById('menu-screen').classList.add('hidden');
+document.getElementById('garage-screen').classList.add('hidden');
+}
+
+function addParticle(x, y, vx, vy, color, life) {
+particles.push({
+x: x,
+y: y,
+vx: vx,
+vy: vy,
+color: color,
+life: life,
+maxLife: life
+});
+}
+
+function updateParticles() {
+for (let i = particles.length - 1; i >= 0; i--) {
+let p = particles[i];
+p.x += p.vx;
+p.y += p.vy;
+p.life -= 0.016;
+if (p.life <= 0) {
+particles.splice(i, 1);
+}
+}
+}
+
+function drawParticles() {
+particles.forEach(p => {
+let alpha = p.life / p.maxLife;
+ctx.save();
+ctx.fillStyle = p.color;
+ctx.globalAlpha = alpha * 0.6;
+ctx.beginPath();
+ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+ctx.fill();
+ctx.restore();
+});
+}
+
+function addSkidmark(x, y) {
+skidmarks.push({
+x: x,
+y: y,
+life: 1.0
+});
+if (skidmarks.length > 400) {
+skidmarks.shift();
+}
+}
+
+function drawSkidmarks() {
+ctx.save();
+ctx.fillStyle = '#1c1f1a';
+skidmarks.forEach(s => {
+ctx.globalAlpha = s.life * 0.3;
+ctx.fillRect(s.x - 2, s.y - 2, 4, 4);
+});
+ctx.restore();
+}
+
+function updatePhysics() {
+if (gameState !== 'RACE' && gameState !== 'COUNTDOWN') return;
+
+cars.forEach((car) => {
+if (gameState === 'RACE') {
+if (car.isPlayer) {
+if (joystickInput.active) {
+let targetAngle = Math.atan2(joystickInput.y, joystickInput.x);
+let angleDiff = targetAngle - car.angle;
+
+while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+car.angle += angleDiff * 0.12;
+
+let magnitude = Math.hypot(joystickInput.x, joystickInput.y);
+if (car.speed < car.maxSpeed) {
+car.speed += car.accel * magnitude;
+}
+
+if (Math.abs(angleDiff) > 0.6 && car.speed > 2.5) {
+let rearX = car.x - Math.cos(car.angle) * 12;
+let rearY = car.y - Math.sin(car.angle) * 12;
+addSkidmark(rearX, rearY);
+}
+} else {
+car.speed *= 0.96;
+}
+} else {
+let wp = waypoints[car.targetWp];
+let targetX = wp.x + Math.cos(car.angle + Math.PI / 2) * car.offset;
+let targetY = wp.y + Math.sin(car.angle + Math.PI / 2) * car.offset;
+
+let dx = targetX - car.x;
+let dy = targetY - car.y;
+let dist = Math.hypot(dx, dy);
+
+let targetAngle = Math.atan2(dy, dx);
+let angleDiff = targetAngle - car.angle;
+
+while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+car.angle += angleDiff * 0.085;
+
+if (dist < 85) {
+car.targetWp = (car.targetWp + 1) % waypoints.length;
+}
+
+if (car.speed < car.maxSpeed) {
+car.speed += car.accel;
+}
+
+let turnAngle = Math.abs(targetAngle - car.angle);
+if (turnAngle > 0.5) {
+car.speed *= 0.975;
+if (car.speed > 3) {
+let rearX = car.x - Math.cos(car.angle) * 12;
+let rearY = car.y - Math.sin(car.angle) * 12;
+addSkidmark(rearX, rearY);
+}
+}
+}
+}
+
+car.x += Math.cos(car.angle) * car.speed;
+car.y += Math.sin(car.angle) * car.speed;
+
+let trackInfo = getClosestTrackPoint(car);
+let maxDist = trackWidth / 2 - 10;
+if (trackInfo.distance > maxDist) {
+let pushAngle = Math.atan2(car.y - trackInfo.point.y, car.x - trackInfo.point.x);
+car.x = trackInfo.point.x + Math.cos(pushAngle) * maxDist;
+car.y = trackInfo.point.y + Math.sin(pushAngle) * maxDist;
+car.speed *= 0.75;
+
+addParticle(car.x, car.y, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, '#4d3b23', 0.4);
+}
+
+let cpWp = waypoints[car.nextCp];
+let distToCp = Math.hypot(cpWp.x - car.x, cpWp.y - car.y);
+if (distToCp < 130) {
+car.nextCp = (car.nextCp + 1) % waypoints.length;
+if (car.nextCp === 1) {
+car.lap++;
+if (car.isPlayer) {
+let reward = Math.floor(car.coinMult);
+saveData.coins += reward;
+saveGame();
+}
+}
+}
+});
+
+for (let i = 0; i < cars.length; i++) {
+for (let j = i + 1; j < cars.length; j++) {
+let c1 = cars[i];
+let c2 = cars[j];
+let dx = c2.x - c1.x;
+let dy = c2.y - c1.y;
+let dist = Math.hypot(dx, dy);
+let minDist = 24;
+if (dist < minDist && dist > 0) {
+let overlap = minDist - dist;
+let nx = dx / dist;
+let ny = dy / dist;
+c1.x -= nx * overlap * 0.5;
+c1.y -= ny * overlap * 0.5;
+c2.x += nx * overlap * 0.5;
+c2.y += ny * overlap * 0.5;
+c1.speed *= 0.92;
+c2.speed *= 0.92;
+}
+}
+}
+
+updateParticles();
+}
+
+function updateCamera() {
+let pCar = cars[0] || { x: 400, y: 1200 };
+
+if (gameState === 'COUNTDOWN') {
+cameraAnimProgress += 0.008;
+if (cameraAnimProgress > 1) cameraAnimProgress = 1;
+let ease = 1 - Math.pow(1 - cameraAnimProgress, 3);
+camera.x = 1000 + (pCar.x - 1000) * ease;
+camera.y = 700 + (pCar.y - 700) * ease;
+camera.zoom = 0.35 + (1.1 - 0.35) * ease;
+} else {
+camera.x += (pCar.x - camera.x) * 0.1;
+camera.y += (pCar.y - camera.y) * 0.1;
+camera.zoom = 1.1;
+}
+}
+
+function drawTrack() {
+ctx.fillStyle = '#1c2618';
+ctx.fillRect(-2000, -2000, 6000, 6000);
+
+ctx.beginPath();
+ctx.strokeStyle = '#121a10';
+ctx.lineWidth = trackWidth + 20;
+ctx.lineCap = 'round';
+ctx.lineJoin = 'round';
+ctx.moveTo(waypoints[0].x, waypoints[0].y);
+for (let i = 1; i < waypoints.length; i++) {
+ctx.lineTo(waypoints[i].x, waypoints[i].y);
+}
+ctx.closePath();
+ctx.stroke();
+
+ctx.beginPath();
+ctx.strokeStyle = '#2b3826';
+ctx.lineWidth = trackWidth + 8;
+ctx.stroke();
+
+ctx.beginPath();
+ctx.strokeStyle = '#181d17';
+ctx.lineWidth = trackWidth;
+ctx.stroke();
+
+ctx.beginPath();
+ctx.strokeStyle = '#2d382b';
+ctx.lineWidth = 2;
+ctx.setLineDash([16, 16]);
+ctx.moveTo(waypoints[0].x, waypoints[0].y);
+for (let i = 1; i < waypoints.length; i++) {
+ctx.lineTo(waypoints[i].x, waypoints[i].y);
+}
+ctx.closePath();
+ctx.stroke();
+ctx.setLineDash([]);
+
+for (let i = 0; i < waypoints.length; i++) {
+let p1 = waypoints[i];
+let p2 = waypoints[(i + 1) % waypoints.length];
+let angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+let perp = angle + Math.PI / 2;
+
+let segLen = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+let numCurbs = Math.floor(segLen / 20);
+
+for (let j = 0; j < numCurbs; j++) {
+let t = j / numCurbs;
+let cx = p1.x + (p2.x - p1.x) * t;
+let cy = p1.y + (p2.y - p1.y) * t;
+
+let color = (j % 2 === 0) ? '#8a3333' : '#d1d1d1';
+ctx.fillStyle = color;
+ctx.strokeStyle = '#111810';
+ctx.lineWidth = 1.5;
+
+let rx1 = cx + Math.cos(perp) * (trackWidth / 2);
+let ry1 = cy + Math.sin(perp) * (trackWidth / 2);
+ctx.beginPath();
+ctx.arc(rx1, ry1, 3.5, 0, Math.PI * 2);
+ctx.fill();
+ctx.stroke();
+
+let rx2 = cx - Math.cos(perp) * (trackWidth / 2);
+let ry2 = cy - Math.sin(perp) * (trackWidth / 2);
+ctx.beginPath();
+ctx.arc(rx2, ry2, 3.5, 0, Math.PI * 2);
+ctx.fill();
+ctx.stroke();
+}
+}
+
+let startP = waypoints[0];
+let nextP = waypoints[1];
+let startAngle = Math.atan2(nextP.y - startP.y, nextP.x - startP.x);
+let startPerp = startAngle + Math.PI / 2;
+
+ctx.save();
+ctx.translate(startP.x, startP.y);
+ctx.rotate(startPerp);
+
+let checkWidth = trackWidth;
+let checkHeight = 14;
+let cols = 10;
+let rows = 2;
+let cw = checkWidth / cols;
+let ch = checkHeight / rows;
+
+ctx.strokeStyle = '#111810';
+ctx.lineWidth = 2;
+ctx.strokeRect(-checkWidth / 2, -checkHeight / 2, checkWidth, checkHeight);
+
+for (let r = 0; r < rows; r++) {
+for (let c = 0; c < cols; c++) {
+ctx.fillStyle = (r + c) % 2 === 0 ? '#e2e8f0' : '#181d17';
+ctx.fillRect(-checkWidth / 2 + c * cw, -checkHeight / 2 + r * ch, cw, ch);
+}
+}
+ctx.restore();
+}
+
+function drawEnvironment() {
+rocks.forEach(r => {
+ctx.save();
+ctx.translate(r.x, r.y);
+
+ctx.fillStyle = 'rgba(0,0,0,0.3)';
+ctx.beginPath();
+ctx.arc(2, 2, r.size, 0, Math.PI * 2);
+ctx.fill();
+
+ctx.fillStyle = '#3a4437';
+ctx.strokeStyle = '#121810';
+ctx.lineWidth = 2;
+ctx.beginPath();
+
+for (let i = 0; i < r.sides; i++) {
+let a = (i / r.sides) * Math.PI * 2;
+let rx = Math.cos(a) * r.size;
+let ry = Math.sin(a) * r.size;
+if (i === 0) ctx.moveTo(rx, ry);
+else ctx.lineTo(rx, ry);
+}
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
+
+ctx.beginPath();
+ctx.strokeStyle = '#273025';
+ctx.lineWidth = 1;
+ctx.moveTo(-r.size * 0.4, -r.size * 0.4);
+ctx.lineTo(r.size * 0.2, r.size * 0.3);
+ctx.stroke();
+
+ctx.restore();
+});
+
+trees.forEach(t => {
+ctx.save();
+ctx.translate(t.x, t.y);
+
+ctx.fillStyle = 'rgba(0,0,0,0.35)';
+ctx.beginPath();
+ctx.arc(4, 4, t.size, 0, Math.PI * 2);
+ctx.fill();
+
+ctx.fillStyle = '#22301e';
+ctx.strokeStyle = '#111810';
+ctx.lineWidth = 2.5;
+
+ctx.beginPath();
+ctx.arc(0, 0, t.size, 0, Math.PI * 2);
+ctx.fill();
+ctx.stroke();
+
+for (let r = 1; r <= t.rings; r++) {
+let rad = t.size * (1 - r * 0.25);
+ctx.beginPath();
+ctx.strokeStyle = '#192416';
+ctx.lineWidth = 1.5;
+ctx.arc(0, 0, rad, 0, Math.PI * 2);
+ctx.stroke();
+}
+
+ctx.beginPath();
+ctx.arc(-t.size * 0.25, -t.size * 0.25, t.size * 0.35, 0, Math.PI * 2);
+ctx.fillStyle = '#2d3d28';
+ctx.fill();
+
+ctx.restore();
+});
+}
+
+function drawCarBody(targetCtx, car, width, height) {
+targetCtx.save();
+
+targetCtx.fillStyle = 'rgba(0,0,0,0.3)';
+targetCtx.fillRect(-width / 2 + 2, -height / 2 + 2, width, height);
+
+targetCtx.fillStyle = '#121810';
+targetCtx.fillRect(-width / 2 + 3, -height / 2 - 2, 7, 3);
+targetCtx.fillRect(width / 2 - 10, -height / 2 - 2, 7, 3);
+targetCtx.fillRect(-width / 2 + 3, height / 2 - 1, 7, 3);
+targetCtx.fillRect(width / 2 - 10, height / 2 - 1, 7, 3);
+
+targetCtx.fillStyle = car.color;
+targetCtx.strokeStyle = '#111810';
+targetCtx.lineWidth = 2;
+targetCtx.beginPath();
+targetCtx.roundRect(-width / 2, -height / 2, width, height, 5);
+targetCtx.fill();
+targetCtx.stroke();
+
+targetCtx.fillStyle = car.stripeColor;
+targetCtx.fillRect(-width / 2, -2, width, 4);
+
+targetCtx.fillStyle = '#181d17';
+targetCtx.strokeStyle = '#111810';
+targetCtx.lineWidth = 1.5;
+targetCtx.beginPath();
+targetCtx.roundRect(-width / 6, -height / 2 + 3, width / 3, height - 6, 2);
+targetCtx.fill();
+targetCtx.stroke();
+
+targetCtx.fillStyle = '#d1d1d1';
+targetCtx.fillRect(width / 2 - 2, -height / 2 + 2, 2, 3);
+targetCtx.fillRect(width / 2 - 2, height / 2 - 5, 2, 3);
+
+targetCtx.restore();
+}
+
+function drawCars() {
+cars.forEach(car => {
+ctx.save();
+ctx.translate(car.x, car.y);
+ctx.rotate(car.angle);
+drawCarBody(ctx, car, car.width, car.height);
+ctx.restore();
+});
+}
+
+function drawStartGantry() {
+if (gameState !== 'COUNTDOWN' && gameState !== 'RACE') return;
+
+let startP = waypoints[0];
+let nextP = waypoints[1];
+let startAngle = Math.atan2(nextP.y - startP.y, nextP.x - startP.x);
+let startPerp = startAngle + Math.PI / 2;
+
+ctx.save();
+ctx.translate(startP.x, startP.y);
+ctx.rotate(startPerp);
+
+ctx.fillStyle = '#121810';
+ctx.strokeStyle = '#273025';
+ctx.lineWidth = 2;
+
+ctx.fillRect(-trackWidth / 2 - 10, -10, 8, 20);
+ctx.strokeRect(-trackWidth / 2 - 10, -10, 8, 20);
+
+ctx.fillRect(trackWidth / 2 + 2, -10, 8, 20);
+ctx.strokeRect(trackWidth / 2 + 2, -10, 8, 20);
+
+ctx.fillRect(-trackWidth / 2 - 10, -4, trackWidth + 20, 8);
+ctx.strokeRect(-trackWidth / 2 - 10, -4, trackWidth + 20, 8);
+
+if (gameState === 'COUNTDOWN') {
+let lightColors = ['#8a3333', '#8a3333', '#8a3333'];
+if (countdownValue === 2) lightColors = ['#e2e8f0', '#8a3333', '#8a3333'];
+if (countdownValue === 1) lightColors = ['#e2e8f0', '#e2e8f0', '#8a3333'];
+if (countdownValue === 0) lightColors = ['#3bb85e', '#3bb85e', '#3bb85e'];
+
+for (let i = 0; i < 3; i++) {
+let lx = -20 + i * 20;
+ctx.fillStyle = lightColors[i];
+ctx.beginPath();
+ctx.arc(lx, 0, 5, 0, Math.PI * 2);
+ctx.fill();
+ctx.strokeStyle = '#121810';
+ctx.lineWidth = 1;
+ctx.stroke();
+}
+}
+
+ctx.restore();
+}
+
+function renderGaragePreview() {
+carCtx.clearRect(0, 0, carCanvas.width, carCanvas.height);
+const car = CAR_PRESETS[saveData.selectedCar];
+carCtx.save();
+carCtx.translate(carCanvas.width / 2, carCanvas.height / 2);
+carCtx.scale(2.2, 2.2);
+drawCarBody(carCtx, {
+color: car.color,
+stripeColor: car.stripeColor
+}, 36, 20);
+carCtx.restore();
+}
+
+function updateGarageUI() {
+const container = document.getElementById('car-selector-container');
+container.innerHTML = '';
+
+CAR_PRESETS.forEach((preset, idx) => {
+const isUnlocked = saveData.unlockedCars[idx];
+const isSelected = saveData.selectedCar === idx;
+
+const card = document.createElement('div');
+card.className = `car-card ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`;
+card.onclick = () => selectCarInGarage(idx);
+
+card.innerHTML = `
+<div class="car-card-name">${preset.name}</div>
+<svg viewBox="0 0 24 24" style="width:28px; height:28px; fill:${preset.color};"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+<div class="car-card-status">
+${isUnlocked ? (isSelected ? 'ACTIVE' : 'SELECT') : preset.price}
+</div>
+`;
+container.appendChild(card);
+});
+
+const upg = saveData.upgrades[saveData.selectedCar];
+document.getElementById('stat-speed-fill').style.width = (upg.speed * 20) + '%';
+document.getElementById('stat-accel-fill').style.width = (upg.accel * 20) + '%';
+document.getElementById('stat-coin-fill').style.width = (upg.coin * 20) + '%';
+
+const speedCost = upg.speed * 100;
+const accelCost = upg.accel * 100;
+const coinCost = upg.coin * 150;
+
+document.getElementById('cost-speed').innerText = upg.speed >= 5 ? 'MAX' : speedCost;
+document.getElementById('cost-accel').innerText = upg.accel >= 5 ? 'MAX' : accelCost;
+document.getElementById('cost-coin').innerText = upg.coin >= 5 ? 'MAX' : coinCost;
+
+btnState('btn-upg-speed', upg.speed < 5 && saveData.coins >= speedCost);
+btnState('btn-upg-accel', upg.accel < 5 && saveData.coins >= accelCost);
+btnState('btn-upg-coin', upg.coin < 5 && saveData.coins >= coinCost);
+
+renderGaragePreview();
+}
+
+function btnState(id, active) {
+const el = document.getElementById(id);
+if (active) el.classList.remove('disabled');
+else el.classList.add('disabled');
+}
+
+function selectCarInGarage(idx) {
+if (saveData.unlockedCars[idx]) {
+saveData.selectedCar = idx;
+} else {
+const preset = CAR_PRESETS[idx];
+if (saveData.coins >= preset.price) {
+saveData.coins -= preset.price;
+saveData.unlockedCars[idx] = true;
+saveData.selectedCar = idx;
+}
+}
+saveGame();
+updateGarageUI();
+}
+
+document.getElementById('btn-upg-speed').onclick = () => {
+const upg = saveData.upgrades[saveData.selectedCar];
+const cost = upg.speed * 100;
+if (upg.speed < 5 && saveData.coins >= cost) {
+saveData.coins -= cost;
+upg.speed++;
+saveGame();
+updateGarageUI();
+}
+};
+
+document.getElementById('btn-upg-accel').onclick = () => {
+const upg = saveData.upgrades[saveData.selectedCar];
+const cost = upg.accel * 100;
+if (upg.accel < 5 && saveData.coins >= cost) {
+saveData.coins -= cost;
+upg.accel++;
+saveGame();
+updateGarageUI();
+}
+};
+
+document.getElementById('btn-upg-coin').onclick = () => {
+const upg = saveData.upgrades[saveData.selectedCar];
+const cost = upg.coin * 150;
+if (upg.coin < 5 && saveData.coins >= cost) {
+saveData.coins -= cost;
+upg.coin++;
+saveGame();
+updateGarageUI();
+}
+};
+
+document.getElementById('btn-play').onclick = () => {
+startRaceSequence();
+};
+
+document.getElementById('btn-garage').onclick = () => {
+document.getElementById('menu-screen').classList.add('hidden');
+document.getElementById('garage-screen').classList.remove('hidden');
+updateGarageUI();
+};
+
+document.getElementById('btn-garage-back').onclick = () => {
+document.getElementById('garage-screen').classList.add('hidden');
+document.getElementById('menu-screen').classList.remove('hidden');
+};
+
+document.getElementById('btn-hud-menu').onclick = () => {
+gameState = 'MENU';
+document.getElementById('menu-screen').classList.remove('hidden');
+};
+
+document.getElementById('player-name-input').onchange = () => {
+saveGame();
+};
+
+function render() {
+ctx.clearRect(0, 0, viewWidth, viewHeight);
+
+ctx.save();
+ctx.translate(viewWidth / 2, viewHeight / 2);
+ctx.scale(camera.zoom, camera.zoom);
+ctx.translate(-camera.x, -camera.y);
+
+drawTrack();
+drawSkidmarks();
+drawEnvironment();
+drawParticles();
+drawStartGantry();
+drawCars();
+
+ctx.restore();
+}
+
+let lastTime = performance.now();
+function gameLoop(now) {
+let dt = (now - lastTime) / 1000;
+lastTime = now;
+
+if (gameState === 'COUNTDOWN') {
+countdownTimer += dt;
+if (countdownTimer >= 1 && countdownValue > 1) {
+countdownValue--;
+countdownTimer = 0;
+} else if (countdownTimer >= 1 && countdownValue === 1) {
+countdownValue = 0;
+gameState = 'RACE';
+}
+}
+
+updatePhysics();
+updateCamera();
+render();
+
+requestAnimationFrame(gameLoop);
+}
+
+loadGame();
+initEnvironment();
+createCars();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
