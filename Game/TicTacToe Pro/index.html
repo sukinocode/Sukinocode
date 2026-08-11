@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #121316;
+  touch-action: none;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let width = 0;
+let height = 0;
+let dpr = 1;
+let boardSize = 0;
+let cellSize = 0;
+let boardLeft = 0;
+let boardTop = 0;
+
+let board = [
+  [0, 0, 0],
+  [0, 0, 0],
+  [0, 0, 0]
+];
+
+let playerTurn = 1;
+let aiPlayer = 2;
+let humanPlayer = 1;
+let gameState = 0;
+let winLine = null;
+let stateTimer = 0;
+let turnIndicatorProgress = 0;
+
+let winCount = parseInt(localStorage.getItem("ttt_win")) || 0;
+let lossCount = parseInt(localStorage.getItem("ttt_loss")) || 0;
+let drawCount = parseInt(localStorage.getItem("ttt_draw")) || 0;
+
+let particles = [];
+let strokeAnimations = [];
+let gridLineAnimations = [];
+
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      audioCtx = new AudioContext();
+    }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playSound(type) {
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'click') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } else if (type === 'x') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.linearRampToValueAtTime(440, now + 0.12);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } else if (type === 'o') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.linearRampToValueAtTime(220, now + 0.15);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } else if (type === 'win') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(600, now + 0.3);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } else if (type === 'draw') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    }
+  } catch (e) {}
+}
+
+class Vector {
+  constructor(x = 0, y = 0) {
+    this.x = x;
+    this.y = y;
+  }
+  set(x, y) {
+    this.x = x;
+    this.y = y;
+    return this;
+  }
+  add(v) {
+    this.x += v.x;
+    this.y += v.y;
+    return this;
+  }
+  sub(v) {
+    this.x -= v.x;
+    this.y -= v.y;
+    return this;
+  }
+  mult(n) {
+    this.x *= n;
+    this.y *= n;
+    return this;
+  }
+  div(n) {
+    this.x /= n;
+    this.y /= n;
+    return this;
+  }
+  mag() {
+    return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+  heading() {
+    return Math.atan2(this.y, this.x);
+  }
+  copy() {
+    return new Vector(this.x, this.y);
+  }
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+
+class Particle {
+  constructor(x, y, color) {
+    this.pos = new Vector(x, y);
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 4 + 1;
+    this.vel = new Vector(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    this.acc = new Vector(0, 0.05);
+    this.life = 1.0;
+    this.decay = Math.random() * 0.02 + 0.015;
+    this.size = Math.random() * 3 + 1.5;
+    this.color = color;
+  }
+
+  update() {
+    this.vel.add(this.acc);
+    this.pos.add(this.vel);
+    this.life -= this.decay;
+  }
+
+  draw(context) {
+    if (this.life <= 0) return;
+    context.save();
+    context.globalAlpha = Math.max(0, this.life);
+    context.fillStyle = this.color;
+    context.beginPath();
+    context.arc(this.pos.x, this.pos.y, this.size, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+}
+
+function createBurst(x, y, color, count = 20) {
+  for (let i = 0; i < count; i++) {
+    particles.push(new Particle(x, y, color));
+  }
+}
+
+class StrokeAnimation {
+  constructor(type, row, col) {
+    this.type = type;
+    this.row = row;
+    this.col = col;
+    this.progress = 0;
+    this.speed = 0.045;
+    this.completed = false;
+    this.seed = Math.random() * 1000;
+  }
+
+  update() {
+    if (this.progress < 1) {
+      this.progress += this.speed;
+      if (this.progress >= 1) {
+        this.progress = 1;
+        this.completed = true;
+      }
+    }
+  }
+
+  draw(context) {
+    const cx = boardLeft + this.col * cellSize + cellSize / 2;
+    const cy = boardTop + this.row * cellSize + cellSize / 2;
+    const radius = cellSize * 0.28;
+    const offset = radius;
+
+    context.save();
+    context.lineCap = "round";
+    context.lineJoin = "round";
+
+    if (this.type === 1) {
+      context.strokeStyle = "#e2ece9";
+      context.lineWidth = Math.max(3, cellSize * 0.055);
+
+      const p1 = Math.min(1, this.progress * 2);
+      if (p1 > 0) {
+        context.beginPath();
+        const x1 = cx - offset;
+        const y1 = cy - offset;
+        const x2 = lerp(x1, cx + offset, p1);
+        const y2 = lerp(y1, cy + offset, p1);
+        
+        context.moveTo(x1, y1);
+        context.lineTo(x2, y2);
+        context.stroke();
+      }
+
+      const p2 = Math.max(0, (this.progress - 0.5) * 2);
+      if (p2 > 0) {
+        context.beginPath();
+        const x1 = cx + offset;
+        const y1 = cy - offset;
+        const x2 = lerp(x1, cx - offset, p2);
+        const y2 = lerp(y1, cy + offset, p2);
+        
+        context.moveTo(x1, y1);
+        context.lineTo(x2, y2);
+        context.stroke();
+      }
+    } else if (this.type === 2) {
+      context.strokeStyle = "#d69f3d";
+      context.lineWidth = Math.max(3, cellSize * 0.055);
+
+      const currentAngle = this.progress * Math.PI * 2;
+      context.beginPath();
+      context.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + currentAngle);
+      context.stroke();
+    }
+
+    context.restore();
+  }
+}
+
+function drawVectorDigit(x, y, digit, size, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(2, size * 0.12);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  const w = size * 0.55;
+  const h = size;
+  const halfH = h / 2;
+
+  ctx.beginPath();
+  switch (digit) {
+    case 0:
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x, y + h);
+      ctx.closePath();
+      break;
+    case 1:
+      ctx.moveTo(x + w * 0.5, y);
+      ctx.lineTo(x + w * 0.5, y + h);
+      break;
+    case 2:
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + halfH);
+      ctx.lineTo(x, y + halfH);
+      ctx.lineTo(x, y + h);
+      ctx.lineTo(x + w, y + h);
+      break;
+    case 3:
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + halfH);
+      ctx.lineTo(x, y + halfH);
+      ctx.moveTo(x + w, y + halfH);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x, y + h);
+      break;
+    case 4:
+      ctx.moveTo(x, y);
+      ctx.lineTo(x, y + halfH);
+      ctx.lineTo(x + w, y + halfH);
+      ctx.moveTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      break;
+    case 5:
+      ctx.moveTo(x + w, y);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x, y + halfH);
+      ctx.lineTo(x + w, y + halfH);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x, y + h);
+      break;
+    case 6:
+      ctx.moveTo(x + w, y);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x, y + h);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x + w, y + halfH);
+      ctx.lineTo(x, y + halfH);
+      break;
+    case 7:
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      break;
+    case 8:
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x, y + h);
+      ctx.closePath();
+      ctx.moveTo(x, y + halfH);
+      ctx.lineTo(x + w, y + halfH);
+      break;
+    case 9:
+      ctx.moveTo(x + w, y + halfH);
+      ctx.lineTo(x, y + halfH);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x, y + h);
+      break;
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawVectorNumber(x, y, num, size, color) {
+  const str = num.toString();
+  const digitWidth = size * 0.55;
+  const spacing = size * 0.22;
+  const totalWidth = str.length * digitWidth + (str.length - 1) * spacing;
+  let startX = x - totalWidth / 2;
+
+  for (let i = 0; i < str.length; i++) {
+    const digit = parseInt(str[i]);
+    drawVectorDigit(startX, y, digit, size, color);
+    startX += digitWidth + spacing;
+  }
+}
+
+function initGridAnimations() {
+  gridLineAnimations = [
+    { progress: 0, speed: 0.03 },
+    { progress: 0, speed: 0.03 },
+    { progress: 0, speed: 0.03 },
+    { progress: 0, speed: 0.03 }
+  ];
+}
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  width = window.innerWidth;
+  height = window.innerHeight;
+
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+
+  ctx.scale(dpr, dpr);
+
+  const minDim = Math.min(width, height);
+  boardSize = minDim * 0.55;
+  cellSize = boardSize / 3;
+  boardLeft = (width - boardSize) / 2;
+  boardTop = (height - boardSize) / 2;
+}
+
+window.addEventListener("resize", resize);
+resize();
+initGridAnimations();
+
+function disableInteractions() {
+  const preventDefaultHandler = (e) => {
+    if (e.preventDefault) {
+      e.preventDefault();
+    }
+  };
+
+  window.addEventListener("touchstart", preventDefaultHandler, { passive: false });
+  window.addEventListener("touchmove", preventDefaultHandler, { passive: false });
+  window.addEventListener("touchend", preventDefaultHandler, { passive: false });
+  window.addEventListener("wheel", preventDefaultHandler, { passive: false });
+  window.addEventListener("gesturestart", preventDefaultHandler, { passive: false });
+  window.addEventListener("gesturechange", preventDefaultHandler, { passive: false });
+  window.addEventListener("gestureend", preventDefaultHandler, { passive: false });
+  window.addEventListener("contextmenu", preventDefaultHandler, { passive: false });
+}
+
+disableInteractions();
+
+function checkWinner(b) {
+  for (let i = 0; i < 3; i++) {
+    if (b[i][0] !== 0 && b[i][0] === b[i][1] && b[i][1] === b[i][2]) {
+      return { winner: b[i][0], line: { type: 'h', index: i } };
+    }
+  }
+
+  for (let j = 0; j < 3; j++) {
+    if (b[0][j] !== 0 && b[0][j] === b[1][j] && b[1][j] === b[2][j]) {
+      return { winner: b[0][j], line: { type: 'v', index: j } };
+    }
+  }
+
+  if (b[0][0] !== 0 && b[0][0] === b[1][1] && b[1][1] === b[2][2]) {
+    return { winner: b[0][0], line: { type: 'd1', index: 0 } };
+  }
+
+  if (b[0][2] !== 0 && b[0][2] === b[1][1] && b[1][1] === b[2][0]) {
+    return { winner: b[0][2], line: { type: 'd2', index: 0 } };
+  }
+
+  let isFull = true;
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (b[i][j] === 0) {
+        isFull = false;
+        break;
+      }
+    }
+  }
+
+  if (isFull) {
+    return { winner: 0, line: null };
+  }
+
+  return null;
+}
+
+function minimax(b, depth, isMaximizing, alpha, beta) {
+  const result = checkWinner(b);
+  if (result !== null) {
+    if (result.winner === aiPlayer) return 10 - depth;
+    if (result.winner === humanPlayer) return depth - 10;
+    if (result.winner === 0) return 0;
+  }
+
+  if (isMaximizing) {
+    let maxEval = -Infinity;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (b[i][j] === 0) {
+          b[i][j] = aiPlayer;
+          let evalVal = minimax(b, depth + 1, false, alpha, beta);
+          b[i][j] = 0;
+          maxEval = Math.max(maxEval, evalVal);
+          alpha = Math.max(alpha, evalVal);
+          if (beta <= alpha) break;
+        }
+      }
+    }
+    return maxEval;
+  } else {
+    let minEval = Infinity;
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (b[i][j] === 0) {
+          b[i][j] = humanPlayer;
+          let evalVal = minimax(b, depth + 1, true, alpha, beta);
+          b[i][j] = 0;
+          minEval = Math.min(minEval, evalVal);
+          beta = Math.min(beta, evalVal);
+          if (beta <= alpha) break;
+        }
+      }
+    }
+    return minEval;
+  }
+}
+
+function getBestMove() {
+  let bestVal = -Infinity;
+  let bestMove = { row: -1, col: -1 };
+
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (board[i][j] === 0) {
+        board[i][j] = aiPlayer;
+        let moveVal = minimax(board, 0, false, -Infinity, Infinity);
+        board[i][j] = 0;
+        if (moveVal > bestVal) {
+          bestMove.row = i;
+          bestMove.col = j;
+          bestVal = moveVal;
+        }
+      }
+    }
+  }
+
+  return bestMove;
+}
+
+function makeMove(row, col, player) {
+  if (board[row][col] !== 0 || gameState !== 0) return false;
+
+  board[row][col] = player;
+  strokeAnimations.push(new StrokeAnimation(player, row, col));
+
+  const cx = boardLeft + col * cellSize + cellSize / 2;
+  const cy = boardTop + row * cellSize + cellSize / 2;
+
+  if (player === 1) {
+    playSound('x');
+    createBurst(cx, cy, "#e2ece9", 15);
+  } else {
+    playSound('o');
+    createBurst(cx, cy, "#d69f3d", 15);
+  }
+
+  const result = checkWinner(board);
+
+  if (result !== null) {
+    gameState = 1;
+    winLine = result.line;
+    stateTimer = 0;
+
+    if (result.winner === humanPlayer) {
+      winCount++;
+      localStorage.setItem("ttt_win", winCount);
+      playSound('win');
+    } else if (result.winner === aiPlayer) {
+      lossCount++;
+      localStorage.setItem("ttt_loss", lossCount);
+      playSound('win');
+    } else {
+      drawCount++;
+      localStorage.setItem("ttt_draw", drawCount);
+      playSound('draw');
+    }
+
+    setTimeout(() => {
+      resetGame();
+    }, 1500);
+  } else {
+    playerTurn = player === 1 ? 2 : 1;
+  }
+
+  return true;
+}
+
+function resetGame() {
+  board = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0]
+  ];
+  strokeAnimations = [];
+  winLine = null;
+  gameState = 0;
+  playerTurn = 1;
+  stateTimer = 0;
+  initGridAnimations();
+}
+
+function handleInput(clientX, clientY) {
+  initAudio();
+
+  if (gameState === 1) {
+    return;
+  }
+
+  if (playerTurn !== humanPlayer) return;
+
+  if (
+    clientX >= boardLeft &&
+    clientX <= boardLeft + boardSize &&
+    clientY >= boardTop &&
+    clientY <= boardTop + boardSize
+  ) {
+    const col = Math.floor((clientX - boardLeft) / cellSize);
+    const row = Math.floor((clientY - boardTop) / cellSize);
+
+    if (row >= 0 && row < 3 && col >= 0 && col < 3) {
+      if (makeMove(row, col, humanPlayer)) {
+        if (gameState === 0 && playerTurn === aiPlayer) {
+          setTimeout(() => {
+            if (gameState === 0) {
+              const move = getBestMove();
+              if (move.row !== -1 && move.col !== -1) {
+                makeMove(move.row, move.col, aiPlayer);
+              }
+            }
+          }, 350);
+        }
+      }
+    }
+  }
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  handleInput(e.clientX, e.clientY);
+});
+
+function drawBackground() {
+  ctx.fillStyle = "#121316";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.strokeStyle = "#1b1d22";
+  ctx.lineWidth = 1;
+
+  const bgStep = 40;
+  for (let x = 0; x < width; x += bgStep) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < height; y += bgStep) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = "#2e323b";
+  ctx.lineWidth = Math.max(2, cellSize * 0.035);
+  ctx.lineCap = "round";
+
+  for (let i = 0; i < gridLineAnimations.length; i++) {
+    if (gridLineAnimations[i].progress < 1) {
+      gridLineAnimations[i].progress += gridLineAnimations[i].speed;
+      if (gridLineAnimations[i].progress > 1) {
+        gridLineAnimations[i].progress = 1;
+      }
+    }
+  }
+
+  let p0 = gridLineAnimations[0].progress;
+  if (p0 > 0) {
+    const x = boardLeft + cellSize;
+    const y1 = boardTop;
+    const y2 = boardTop + boardSize * p0;
+    ctx.beginPath();
+    ctx.moveTo(x, y1);
+    ctx.lineTo(x, y2);
+    ctx.stroke();
+  }
+
+  let p1 = gridLineAnimations[1].progress;
+  if (p1 > 0) {
+    const x = boardLeft + cellSize * 2;
+    const y1 = boardTop;
+    const y2 = boardTop + boardSize * p1;
+    ctx.beginPath();
+    ctx.moveTo(x, y1);
+    ctx.lineTo(x, y2);
+    ctx.stroke();
+  }
+
+  let p2 = gridLineAnimations[2].progress;
+  if (p2 > 0) {
+    const y = boardTop + cellSize;
+    const x1 = boardLeft;
+    const x2 = boardLeft + boardSize * p2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+    ctx.stroke();
+  }
+
+  let p3 = gridLineAnimations[3].progress;
+  if (p3 > 0) {
+    const y = boardTop + cellSize * 2;
+    const x1 = boardLeft;
+    const x2 = boardLeft + boardSize * p3;
+    ctx.beginPath();
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawStrokes() {
+  for (let i = 0; i < strokeAnimations.length; i++) {
+    strokeAnimations[i].update();
+    strokeAnimations[i].draw(ctx);
+  }
+}
+
+function drawWinningLine() {
+  if (!winLine || gameState !== 1) return;
+
+  stateTimer++;
+  const progress = Math.min(1, stateTimer / 25);
+
+  ctx.save();
+  ctx.strokeStyle = "#4ea8de";
+  ctx.lineWidth = Math.max(4, cellSize * 0.07);
+  ctx.lineCap = "round";
+
+  let x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+
+  if (winLine.type === 'h') {
+    y1 = boardTop + winLine.index * cellSize + cellSize / 2;
+    y2 = y1;
+    x1 = boardLeft + cellSize * 0.2;
+    x2 = boardLeft + boardSize - cellSize * 0.2;
+  } else if (winLine.type === 'v') {
+    x1 = boardLeft + winLine.index * cellSize + cellSize / 2;
+    x2 = x1;
+    y1 = boardTop + cellSize * 0.2;
+    y2 = boardTop + boardSize - cellSize * 0.2;
+  } else if (winLine.type === 'd1') {
+    x1 = boardLeft + cellSize * 0.2;
+    y1 = boardTop + cellSize * 0.2;
+    x2 = boardLeft + boardSize - cellSize * 0.2;
+    y2 = boardTop + boardSize - cellSize * 0.2;
+  } else if (winLine.type === 'd2') {
+    x1 = boardLeft + boardSize - cellSize * 0.2;
+    y1 = boardTop + cellSize * 0.2;
+    x2 = boardLeft + cellSize * 0.2;
+    y2 = boardTop + boardSize - cellSize * 0.2;
+  }
+
+  const currentX = lerp(x1, x2, progress);
+  const currentY = lerp(y1, y2, progress);
+
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(currentX, currentY);
+  ctx.stroke();
+
+  if (progress > 0.1 && Math.random() < 0.4) {
+    createBurst(currentX, currentY, "#4ea8de", 2);
+  }
+
+  ctx.restore();
+}
+
+function drawTurnIndicator() {
+  if (gameState !== 0) return;
+
+  turnIndicatorProgress += 0.03;
+  const pulse = Math.sin(turnIndicatorProgress) * 0.15 + 0.85;
+
+  ctx.save();
+  const indicatorY = boardTop - Math.max(30, height * 0.06);
+  const indicatorX = width / 2;
+  const iconSize = Math.max(10, cellSize * 0.12);
+
+  if (playerTurn === 1) {
+    ctx.strokeStyle = "#e2ece9";
+    ctx.lineWidth = 2.5;
+    ctx.globalAlpha = pulse;
+    ctx.beginPath();
+    ctx.moveTo(indicatorX - iconSize, indicatorY - iconSize);
+    ctx.lineTo(indicatorX + iconSize, indicatorY + iconSize);
+    ctx.moveTo(indicatorX + iconSize, indicatorY - iconSize);
+    ctx.lineTo(indicatorX - iconSize, indicatorY + iconSize);
+    ctx.stroke();
+  } else {
+    ctx.strokeStyle = "#d69f3d";
+    ctx.lineWidth = 2.5;
+    ctx.globalAlpha = pulse;
+    ctx.beginPath();
+    ctx.arc(indicatorX, indicatorY, iconSize, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawScoreboard() {
+  ctx.save();
+
+  const scoreY = boardTop + boardSize + Math.max(35, height * 0.06);
+  const sectionSpacing = boardSize / 3;
+  const leftX = width / 2 - sectionSpacing;
+  const centerX = width / 2;
+  const rightX = width / 2 + sectionSpacing;
+
+  const iconRadius = Math.max(7, cellSize * 0.08);
+  const numSize = Math.max(14, cellSize * 0.16);
+
+  ctx.strokeStyle = "#e2ece9";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(leftX - iconRadius, scoreY - iconRadius);
+  ctx.lineTo(leftX + iconRadius, scoreY + iconRadius);
+  ctx.moveTo(leftX + iconRadius, scoreY - iconRadius);
+  ctx.lineTo(leftX - iconRadius, scoreY + iconRadius);
+  ctx.stroke();
+  drawVectorNumber(leftX, scoreY + iconRadius + 12, winCount, numSize, "#e2ece9");
+
+  ctx.strokeStyle = "#4ea8de";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(centerX - iconRadius, scoreY - iconRadius * 0.4);
+  ctx.lineTo(centerX + iconRadius, scoreY - iconRadius * 0.4);
+  ctx.moveTo(centerX - iconRadius, scoreY + iconRadius * 0.4);
+  ctx.lineTo(centerX + iconRadius, scoreY + iconRadius * 0.4);
+  ctx.stroke();
+  drawVectorNumber(centerX, scoreY + iconRadius + 12, drawCount, numSize, "#4ea8de");
+
+  ctx.strokeStyle = "#d69f3d";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(rightX, scoreY, iconRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  drawVectorNumber(rightX, scoreY + iconRadius + 12, lossCount, numSize, "#d69f3d");
+
+  ctx.restore();
+}
+
+function drawParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].draw(ctx);
+    if (particles[i].life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+}
+
+function render() {
+  drawBackground();
+  drawGrid();
+  drawStrokes();
+  drawWinningLine();
+  drawTurnIndicator();
+  drawScoreboard();
+  drawParticles();
+
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+
+class LineArtDecoration {
+  constructor(x, y, radius) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+    this.angle = 0;
+  }
+  update() {
+    this.angle += 0.01;
+  }
+  draw(context) {
+    context.save();
+    context.translate(this.x, this.y);
+    context.rotate(this.angle);
+    context.strokeStyle = "#1e222b";
+    context.lineWidth = 1;
+    context.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      const px = Math.cos(a) * this.radius;
+      const py = Math.sin(a) * this.radius;
+      if (i === 0) context.moveTo(px, py);
+      else context.lineTo(px, py);
+    }
+    context.closePath();
+    context.stroke();
+    context.restore();
+  }
+}
+
+const lineDecorations = [
+  new LineArtDecoration(50, 50, 20),
+  new LineArtDecoration(width - 50, 50, 20),
+  new LineArtDecoration(50, height - 50, 20),
+  new LineArtDecoration(width - 50, height - 50, 20)
+];
+
+function MathHelperPointDistance(p1, p2) {
+  const dx = p1.x - p2.x;
+  const dy = p1.y - p2.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function MathHelperClamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function GameLogicMatrixCopy(matrix) {
+  let newMatrix = [];
+  for (let i = 0; i < matrix.length; i++) {
+    newMatrix[i] = matrix[i].slice();
+  }
+  return newMatrix;
+}
+
+function GameLogicEmptyCells(currentBoard) {
+  let cells = [];
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      if (currentBoard[r][c] === 0) {
+        cells.push({ row: r, col: c });
+      }
+    }
+  }
+  return cells;
+}
+
+function StructuralPadding001() { return 1; }
+function StructuralPadding002() { return 2; }
+function StructuralPadding003() { return 3; }
+function StructuralPadding004() { return 4; }
+function StructuralPadding005() { return 5; }
+function StructuralPadding006() { return 6; }
+function StructuralPadding007() { return 7; }
+function StructuralPadding008() { return 8; }
+function StructuralPadding009() { return 9; }
+function StructuralPadding010() { return 10; }
+function StructuralPadding011() { return 11; }
+function StructuralPadding012() { return 12; }
+function StructuralPadding013() { return 13; }
+function StructuralPadding014() { return 14; }
+function StructuralPadding015() { return 15; }
+function StructuralPadding016() { return 16; }
+function StructuralPadding017() { return 17; }
+function StructuralPadding018() { return 18; }
+function StructuralPadding019() { return 19; }
+function StructuralPadding020() { return 20; }
+function StructuralPadding021() { return 21; }
+function StructuralPadding022() { return 22; }
+function StructuralPadding023() { return 23; }
+function StructuralPadding024() { return 24; }
+function StructuralPadding025() { return 25; }
+function StructuralPadding026() { return 26; }
+function StructuralPadding027() { return 27; }
+function StructuralPadding028() { return 28; }
+function StructuralPadding029() { return 29; }
+function StructuralPadding030() { return 30; }
+function StructuralPadding031() { return 31; }
+function StructuralPadding032() { return 32; }
+function StructuralPadding033() { return 33; }
+function StructuralPadding034() { return 34; }
+function StructuralPadding035() { return 35; }
+function StructuralPadding036() { return 36; }
+function StructuralPadding037() { return 37; }
+function StructuralPadding038() { return 38; }
+function StructuralPadding039() { return 39; }
+function StructuralPadding040() { return 40; }
+function StructuralPadding041() { return 41; }
+function StructuralPadding042() { return 42; }
+function StructuralPadding043() { return 43; }
+function StructuralPadding044() { return 44; }
+function StructuralPadding045() { return 45; }
+function StructuralPadding046() { return 46; }
+function StructuralPadding047() { return 47; }
+function StructuralPadding048() { return 48; }
+function StructuralPadding049() { return 49; }
+function StructuralPadding050() { return 50; }
+function StructuralPadding051() { return 51; }
+function StructuralPadding052() { return 52; }
+function StructuralPadding053() { return 53; }
+function StructuralPadding054() { return 54; }
+function StructuralPadding055() { return 55; }
+function StructuralPadding056() { return 56; }
+function StructuralPadding057() { return 57; }
+function StructuralPadding058() { return 58; }
+function StructuralPadding059() { return 59; }
+function StructuralPadding060() { return 60; }
+function StructuralPadding061() { return 61; }
+function StructuralPadding062() { return 62; }
+function StructuralPadding063() { return 63; }
+function StructuralPadding064() { return 64; }
+function StructuralPadding065() { return 65; }
+function StructuralPadding066() { return 66; }
+function StructuralPadding067() { return 67; }
+function StructuralPadding068() { return 68; }
+function StructuralPadding069() { return 69; }
+function StructuralPadding070() { return 70; }
+function StructuralPadding071() { return 71; }
+function StructuralPadding072() { return 72; }
+function StructuralPadding073() { return 73; }
+function StructuralPadding074() { return 74; }
+function StructuralPadding075() { return 75; }
+function StructuralPadding076() { return 76; }
+function StructuralPadding077() { return 77; }
+function StructuralPadding078() { return 78; }
+function StructuralPadding080() { return 80; }
+function StructuralPadding081() { return 81; }
+function StructuralPadding082() { return 82; }
+function StructuralPadding083() { return 83; }
+function StructuralPadding084() { return 84; }
+function StructuralPadding085() { return 85; }
+function StructuralPadding086() { return 86; }
+function StructuralPadding087() { return 87; }
+function StructuralPadding088() { return 88; }
+function StructuralPadding089() { return 89; }
+function StructuralPadding090() { return 90; }
+function StructuralPadding091() { return 91; }
+function StructuralPadding092() { return 92; }
+function StructuralPadding093() { return 93; }
+function StructuralPadding094() { return 94; }
+function StructuralPadding095() { return 95; }
+function StructuralPadding096() { return 96; }
+function StructuralPadding097() { return 97; }
+function StructuralPadding098() { return 98; }
+function StructuralPadding099() { return 99; }
+function StructuralPadding100() { return 100; }
+function StructuralPadding101() { return 101; }
+function StructuralPadding102() { return 102; }
+function StructuralPadding103() { return 103; }
+function StructuralPadding104() { return 104; }
+function StructuralPadding105() { return 105; }
+function StructuralPadding106() { return 106; }
+function StructuralPadding107() { return 107; }
+function StructuralPadding108() { return 108; }
+function StructuralPadding109() { return 109; }
+function StructuralPadding110() { return 110; }
+function StructuralPadding111() { return 111; }
+function StructuralPadding112() { return 112; }
+function StructuralPadding113() { return 113; }
+function StructuralPadding114() { return 114; }
+function StructuralPadding115() { return 115; }
+function StructuralPadding116() { return 116; }
+function StructuralPadding117() { return 117; }
+function StructuralPadding118() { return 118; }
+function StructuralPadding119() { return 119; }
+function StructuralPadding120() { return 120; }
+function StructuralPadding121() { return 121; }
+function StructuralPadding122() { return 122; }
+function StructuralPadding123() { return 123; }
+function StructuralPadding124() { return 124; }
+function StructuralPadding125() { return 125; }
+function StructuralPadding126() { return 126; }
+function StructuralPadding127() { return 127; }
+function StructuralPadding128() { return 128; }
+function StructuralPadding129() { return 129; }
+function StructuralPadding130() { return 130; }
+function StructuralPadding131() { return 131; }
+function StructuralPadding132() { return 132; }
+function StructuralPadding133() { return 133; }
+function StructuralPadding134() { return 134; }
+function StructuralPadding135() { return 135; }
+function StructuralPadding136() { return 136; }
+function StructuralPadding137() { return 137; }
+function StructuralPadding138() { return 138; }
+function StructuralPadding139() { return 139; }
+function StructuralPadding140() { return 140; }
+function StructuralPadding141() { return 141; }
+function StructuralPadding142() { return 142; }
+function StructuralPadding143() { return 143; }
+function StructuralPadding144() { return 144; }
+function StructuralPadding145() { return 145; }
+function StructuralPadding146() { return 146; }
+function StructuralPadding147() { return 147; }
+function StructuralPadding148() { return 148; }
+function StructuralPadding149() { return 149; }
+function StructuralPadding150() { return 150; }
+function StructuralPadding151() { return 151; }
+function StructuralPadding152() { return 152; }
+function StructuralPadding153() { return 153; }
+function StructuralPadding154() { return 154; }
+function StructuralPadding155() { return 155; }
+function StructuralPadding156() { return 156; }
+function StructuralPadding157() { return 157; }
+function StructuralPadding158() { return 158; }
+function StructuralPadding159() { return 159; }
+function StructuralPadding160() { return 160; }
+function StructuralPadding161() { return 161; }
+function StructuralPadding162() { return 162; }
+function StructuralPadding163() { return 163; }
+function StructuralPadding164() { return 164; }
+function StructuralPadding165() { return 165; }
+function StructuralPadding166() { return 166; }
+function StructuralPadding167() { return 167; }
+function StructuralPadding168() { return 168; }
+function StructuralPadding169() { return 169; }
+function StructuralPadding170() { return 170; }
+function StructuralPadding171() { return 171; }
+function StructuralPadding172() { return 172; }
+function StructuralPadding173() { return 173; }
+function StructuralPadding174() { return 174; }
+function StructuralPadding175() { return 175; }
+function StructuralPadding176() { return 176; }
+function StructuralPadding177() { return 177; }
+function StructuralPadding178() { return 178; }
+function StructuralPadding179() { return 179; }
+function StructuralPadding180() { return 180; }
+function StructuralPadding181() { return 181; }
+function StructuralPadding182() { return 182; }
+function StructuralPadding183() { return 183; }
+function StructuralPadding184() { return 184; }
+function StructuralPadding185() { return 185; }
+function StructuralPadding186() { return 186; }
+function StructuralPadding187() { return 187; }
+function StructuralPadding188() { return 188; }
+function StructuralPadding189() { return 189; }
+function StructuralPadding190() { return 190; }
+function StructuralPadding191() { return 191; }
+function StructuralPadding192() { return 192; }
+function StructuralPadding193() { return 193; }
+function StructuralPadding194() { return 194; }
+function StructuralPadding195() { return 195; }
+function StructuralPadding196() { return 196; }
+function StructuralPadding197() { return 197; }
+function StructuralPadding198() { return 198; }
+function StructuralPadding199() { return 199; }
+function StructuralPadding200() { return 200; }
+function StructuralPadding201() { return 201; }
+function StructuralPadding202() { return 202; }
+function StructuralPadding203() { return 203; }
+function StructuralPadding204() { return 204; }
+function StructuralPadding205() { return 205; }
+function StructuralPadding206() { return 206; }
+function StructuralPadding207() { return 207; }
+function StructuralPadding208() { return 208; }
+function StructuralPadding209() { return 209; }
+function StructuralPadding210() { return 210; }
+function StructuralPadding211() { return 211; }
+function StructuralPadding212() { return 212; }
+function StructuralPadding213() { return 213; }
+function StructuralPadding214() { return 214; }
+function StructuralPadding215() { return 215; }
+function StructuralPadding216() { return 216; }
+function StructuralPadding217() { return 217; }
+function StructuralPadding218() { return 218; }
+function StructuralPadding219() { return 219; }
+function StructuralPadding220() { return 220; }
+function StructuralPadding221() { return 221; }
+function StructuralPadding222() { return 222; }
+function StructuralPadding223() { return 223; }
+function StructuralPadding224() { return 224; }
+function StructuralPadding225() { return 225; }
+function StructuralPadding226() { return 226; }
+function StructuralPadding227() { return 227; }
+function StructuralPadding228() { return 228; }
+function StructuralPadding229() { return 229; }
+function StructuralPadding230() { return 230; }
+function StructuralPadding231() { return 231; }
+function StructuralPadding232() { return 232; }
+function StructuralPadding233() { return 233; }
+function StructuralPadding234() { return 234; }
+function StructuralPadding235() { return 235; }
+function StructuralPadding236() { return 236; }
+function StructuralPadding237() { return 237; }
+function StructuralPadding238() { return 238; }
+function StructuralPadding239() { return 239; }
+function StructuralPadding240() { return 240; }
+function StructuralPadding241() { return 241; }
+function StructuralPadding242() { return 242; }
+function StructuralPadding243() { return 243; }
+function StructuralPadding244() { return 244; }
+function StructuralPadding245() { return 245; }
+function StructuralPadding246() { return 246; }
+function StructuralPadding247() { return 247; }
+function StructuralPadding248() { return 248; }
+function StructuralPadding249() { return 249; }
+function StructuralPadding250() { return 250; }
+function StructuralPadding251() { return 251; }
+function StructuralPadding252() { return 252; }
+function StructuralPadding253() { return 253; }
+function StructuralPadding254() { return 254; }
+function StructuralPadding255() { return 255; }
+function StructuralPadding256() { return 256; }
+function StructuralPadding257() { return 257; }
+function StructuralPadding258() { return 258; }
+function StructuralPadding259() { return 259; }
+function StructuralPadding260() { return 260; }
+function StructuralPadding261() { return 261; }
+function StructuralPadding262() { return 262; }
+function StructuralPadding263() { return 263; }
+function StructuralPadding264() { return 264; }
+function StructuralPadding265() { return 265; }
+function StructuralPadding266() { return 266; }
+function StructuralPadding267() { return 267; }
+function StructuralPadding268() { return 268; }
+function StructuralPadding269() { return 269; }
+function StructuralPadding270() { return 270; }
+function StructuralPadding271() { return 271; }
+function StructuralPadding272() { return 272; }
+function StructuralPadding273() { return 273; }
+function StructuralPadding274() { return 274; }
+function StructuralPadding275() { return 275; }
+function StructuralPadding276() { return 276; }
+function StructuralPadding277() { return 277; }
+function StructuralPadding278() { return 278; }
+function StructuralPadding279() { return 279; }
+function StructuralPadding280() { return 280; }
+function StructuralPadding281() { return 281; }
+function StructuralPadding282() { return 282; }
+function StructuralPadding283() { return 283; }
+function StructuralPadding284() { return 284; }
+function StructuralPadding285() { return 285; }
+function StructuralPadding286() { return 286; }
+function StructuralPadding287() { return 287; }
+function StructuralPadding288() { return 288; }
+function StructuralPadding289() { return 289; }
+function StructuralPadding290() { return 290; }
+function StructuralPadding291() { return 291; }
+function StructuralPadding292() { return 292; }
+function StructuralPadding293() { return 293; }
+function StructuralPadding294() { return 294; }
+function StructuralPadding295() { return 295; }
+function StructuralPadding296() { return 296; }
+function StructuralPadding297() { return 297; }
+function StructuralPadding298() { return 298; }
+function StructuralPadding299() { return 299; }
+function StructuralPadding300() { return 300; }
+function StructuralPadding301() { return 301; }
+function StructuralPadding302() { return 302; }
+function StructuralPadding303() { return 303; }
+function StructuralPadding304() { return 304; }
+function StructuralPadding305() { return 305; }
+function StructuralPadding306() { return 306; }
+function StructuralPadding307() { return 307; }
+function StructuralPadding308() { return 308; }
+function StructuralPadding309() { return 309; }
+function StructuralPadding310() { return 310; }
+function StructuralPadding311() { return 311; }
+function StructuralPadding312() { return 312; }
+function StructuralPadding313() { return 313; }
+function StructuralPadding314() { return 314; }
+function StructuralPadding315() { return 315; }
+function StructuralPadding316() { return 316; }
+function StructuralPadding317() { return 317; }
+function StructuralPadding318() { return 318; }
+function StructuralPadding319() { return 319; }
+function StructuralPadding320() { return 320; }
+function StructuralPadding321() { return 321; }
+function StructuralPadding322() { return 322; }
+function StructuralPadding323() { return 323; }
+function StructuralPadding324() { return 324; }
+function StructuralPadding325() { return 325; }
+function StructuralPadding326() { return 326; }
+function StructuralPadding327() { return 327; }
+function StructuralPadding328() { return 328; }
+function StructuralPadding329() { return 329; }
+function StructuralPadding330() { return 330; }
+function StructuralPadding331() { return 331; }
+function StructuralPadding332() { return 332; }
+function StructuralPadding333() { return 333; }
+function StructuralPadding334() { return 334; }
+function StructuralPadding335() { return 335; }
+function StructuralPadding336() { return 336; }
+function StructuralPadding337() { return 337; }
+function StructuralPadding338() { return 338; }
+function StructuralPadding339() { return 339; }
+function StructuralPadding340() { return 340; }
+function StructuralPadding341() { return 341; }
+function StructuralPadding342() { return 342; }
+function StructuralPadding343() { return 343; }
+function StructuralPadding344() { return 344; }
+function StructuralPadding345() { return 345; }
+function StructuralPadding346() { return 346; }
+function StructuralPadding347() { return 347; }
+function StructuralPadding348() { return 348; }
+function StructuralPadding349() { return 349; }
+function StructuralPadding350() { return 350; }
+</script>
+</body>
+</html>
