@@ -53,14 +53,12 @@
       padding: 0;
       margin: 0;
       border: none;
-      /* Memastikan area ini bisa menerima input */
       pointer-events: auto; 
     }
     #iframe-animasi {
       width: 100%;
       height: 100%;
       border: none;
-      /* Supaya klik tembus ke parent untuk deteksi double tap */
       pointer-events: none; 
     }
     h1 {
@@ -107,6 +105,11 @@
       justify-content: space-around;
       align-items: center;
       z-index: 1000;
+      transform: translateY(100%);
+      transition: transform 0.5s ease-out;
+    }
+    .bottom-nav.show {
+      transform: translateY(0);
     }
     .nav-item {
       display: flex;
@@ -169,7 +172,7 @@
   </div>
 
   <nav class="bottom-nav" id="main-nav">
-    <button class="nav-item active" onclick="switchTab('screen-games', this)">
+    <button class="nav-item" onclick="switchTab('screen-games', this)">
       <svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
       <span>Daftar Game</span>
     </button>
@@ -177,7 +180,7 @@
       <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
       <span>Event</span>
     </button>
-    <button class="nav-item" onclick="switchTab('screen-animasi', this)">
+    <button class="nav-item active" onclick="switchTab('screen-animasi', this)">
       <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
       <span>Animasi kedatangan</span>
     </button>
@@ -192,7 +195,7 @@
       navigator.serviceWorker.register('sw.js');
     }
 
-    let activeTabId = 'screen-games';
+    let activeTabId = 'screen-animasi';
     let currentAnimasiIndex = parseInt(localStorage.getItem('selected_animasi_index') || 0);
 
     const asetList = [
@@ -260,8 +263,15 @@
     window.addEventListener('offline', checkConnection);
     
     updateAnimasi();
-    switchTab('screen-games', document.querySelectorAll('.nav-item')[0]);
+    switchTab('screen-animasi', document.querySelectorAll('.nav-item')[2]);
     checkConnection();
+
+    const iframeAnimasi = document.getElementById('iframe-animasi');
+    iframeAnimasi.addEventListener('load', function() {
+      setTimeout(function() {
+        document.getElementById('main-nav').classList.add('show');
+      }, 1000);
+    });
   </script>
 </body>
 </html>
