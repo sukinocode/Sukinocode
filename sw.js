@@ -1,4 +1,4 @@
-const CACHE_NAME = 'suki999-v11';
+const CACHE_NAME = 'suki999-v12';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
