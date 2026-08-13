@@ -151,9 +151,144 @@
       height: 22px;
       fill: currentColor;
     }
+    #sub4unlock-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      background-color: #0a192f;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px 15px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .s4u-card {
+      width: 100%;
+      max-width: 400px;
+      background-color: #ffffff;
+      border-radius: 16px;
+      padding: 20px 16px;
+      text-align: center;
+      color: #004080;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      margin: auto 0;
+    }
+    .s4u-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0052cc;
+      margin-bottom: 6px;
+    }
+    .s4u-sub {
+      font-size: 12px;
+      color: #003366;
+      margin-bottom: 16px;
+    }
+    .s4u-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+    .s4u-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 12px 14px;
+      background-color: #0066ff;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .s4u-btn:active {
+      transform: scale(0.98);
+    }
+    .s4u-btn.done {
+      background-color: #e6f0ff;
+      color: #0052cc;
+      border: 1px solid #0052cc;
+      cursor: default;
+      pointer-events: none;
+    }
+    .s4u-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+    .s4u-btn.done .s4u-badge {
+      background-color: #0052cc;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
+
+  <div id="sub4unlock-overlay">
+    <div class="s4u-card">
+      <div class="s4u-title">SUB4UNLOCK</div>
+      <div class="s4u-sub">Selesaikan semua tugas untuk membuka halaman</div>
+      <div class="s4u-list">
+        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o66QKV/" onclick="handleS4uClick(this)">
+          <span>Like & follow TikTok</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6yEho/" onclick="handleS4uClick(this)">
+          <span>Like TikTok</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6SUCn/" onclick="handleS4uClick(this)">
+          <span>Like TikTok</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6PQ3F/" onclick="handleS4uClick(this)">
+          <span>Like TikTok</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6pM2c/" onclick="handleS4uClick(this)">
+          <span>Like TikTok + bukti offline</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6m8P5/" onclick="handleS4uClick(this)">
+          <span>Like TikTok = demon slayer</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o64fSv/" onclick="handleS4uClick(this)">
+          <span>Like TikTok = sword of the sea</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://whatsapp.com/channel/0029Vauyr9L9Bb63SdcDJB3n" onclick="handleS4uClick(this)">
+          <span>Follow saluran</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://whatsapp.com/channel/0029Vb6t3YqIXnluSByJvh1g" onclick="handleS4uClick(this)">
+          <span>Follow saluran</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://youtu.be/89CafFD5LtA?si=dkD8sxCo2MGF4oMF" onclick="handleS4uClick(this)">
+          <span>Like & subscribe yt</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+        <button class="s4u-btn" data-url="https://youtube.com/@wangsafgamingg" onclick="handleS4uClick(this)">
+          <span>Subscribe yt</span>
+          <span class="s4u-badge">Buka</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <div id="screen-offline">
     <h1>Koneksi Terputus</h1>
@@ -243,6 +378,43 @@
   </nav>
 
   <script>
+    function checkS4u() {
+      if (localStorage.getItem('sub4unlock_done') === 'true') {
+        const overlay = document.getElementById('sub4unlock-overlay');
+        if (overlay) {
+          overlay.style.display = 'none';
+        }
+      }
+    }
+
+    function handleS4uClick(btn) {
+      if (btn.classList.contains('done')) return;
+      btn.style.pointerEvents = 'none';
+      const url = btn.getAttribute('data-url');
+      if (url) {
+        window.open(url, '_blank');
+      }
+      setTimeout(function() {
+        btn.classList.add('done');
+        btn.style.pointerEvents = 'auto';
+        const badge = btn.querySelector('.s4u-badge');
+        if (badge) {
+          badge.innerText = 'Selesai ✓';
+        }
+        const allBtns = document.querySelectorAll('.s4u-btn');
+        const doneBtns = document.querySelectorAll('.s4u-btn.done');
+        if (allBtns.length > 0 && doneBtns.length === allBtns.length) {
+          localStorage.setItem('sub4unlock_done', 'true');
+          const overlay = document.getElementById('sub4unlock-overlay');
+          if (overlay) {
+            overlay.style.display = 'none';
+          }
+        }
+      }, 5000);
+    }
+
+    checkS4u();
+
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
     document.addEventListener('dblclick', function (e) { e.preventDefault(); });
     document.addEventListener('wheel', function (e) { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
