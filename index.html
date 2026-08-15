@@ -32,6 +32,22 @@
       right: 0;
       bottom: 0;
     }
+    #snow-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+      display: none;
+      pointer-events: none;
+    }
+    #canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
     #screen-offline, #screen-games, #screen-event, #screen-animasi {
       width: 100%;
       height: calc(100% - 60px);
@@ -49,15 +65,8 @@
       padding: 20px;
       justify-content: center;
     }
-    #screen-games {
-      padding: 20px;
-      padding-bottom: 30px;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
-    }
-    #screen-event {
-      padding: 20px;
+    #screen-games, #screen-event {
+      padding: 10px;
       padding-bottom: 30px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
@@ -77,37 +86,41 @@
       pointer-events: none; 
     }
     h1 {
-      margin-bottom: 20px;
-      font-size: 24px;
+      margin-bottom: 10px;
+      font-size: 18px;
     }
     .game-list {
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 8px;
       width: 100%;
       max-width: 400px;
     }
     .game-card {
       display: flex;
       align-items: center;
-      background-color: #1e1e1e;
-      border-radius: 12px;
-      padding: 10px;
+      background-color: rgba(30, 30, 30, 0.3);
+      border-radius: 8px;
+      padding: 5px;
       text-decoration: none;
       color: #ffffff;
-      border: 1px solid #333;
-      -webkit-tap-highlight-color: transparent;
+      border: 1px solid rgba(51, 51, 51, 0.3);
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    .game-card:active {
+      transform: scale(0.95);
+      background-color: rgba(30, 30, 30, 0.5);
     }
     .game-card img {
-      width: 80px;
-      height: 80px;
+      width: 50px;
+      height: 50px;
       object-fit: cover;
-      border-radius: 8px;
-      margin-right: 15px;
+      border-radius: 6px;
+      margin-right: 10px;
       flex-shrink: 0;
     }
     .game-title {
-      font-size: 18px;
+      font-size: 14px;
       font-weight: bold;
     }
     .bottom-nav {
@@ -141,7 +154,10 @@
       cursor: pointer;
       font-size: 10px;
       gap: 4px;
-      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.2s;
+    }
+    .nav-item:active {
+      transform: scale(0.9);
     }
     .nav-item.active {
       color: #0088ff;
@@ -210,7 +226,7 @@
       font-weight: 700;
       cursor: pointer;
       text-decoration: none;
-      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.2s;
     }
     .s4u-btn:active {
       transform: scale(0.98);
@@ -236,6 +252,10 @@
   </style>
 </head>
 <body>
+
+  <div id="snow-bg">
+    <canvas id="canvas"></canvas>
+  </div>
 
   <div id="sub4unlock-overlay">
     <div class="s4u-card">
@@ -292,11 +312,10 @@
 
   <div id="screen-offline">
     <h1>Koneksi Terputus</h1>
-    <p>Aplikasi ini membutuhkan koneksi internet untuk masuk.</p>
+    <p>Aplikasi ini membutuhkan koneksi internet.</p>
   </div>
 
   <div id="screen-games">
-    <h1></h1>
     <div class="game-list">      
       <a href="Game/Balap Suki/index.html" class="game-card">
         <img src="balap suki.jpg" alt="Balap Suki">
@@ -377,13 +396,12 @@
     </button>
   </nav>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
     function checkS4u() {
       if (localStorage.getItem('sub4unlock_done') === 'true') {
         const overlay = document.getElementById('sub4unlock-overlay');
-        if (overlay) {
-          overlay.style.display = 'none';
-        }
+        if (overlay) overlay.style.display = 'none';
       }
     }
 
@@ -391,24 +409,18 @@
       if (btn.classList.contains('done')) return;
       btn.style.pointerEvents = 'none';
       const url = btn.getAttribute('data-url');
-      if (url) {
-        window.open(url, '_blank');
-      }
+      if (url) window.open(url, '_blank');
       setTimeout(function() {
         btn.classList.add('done');
         btn.style.pointerEvents = 'auto';
         const badge = btn.querySelector('.s4u-badge');
-        if (badge) {
-          badge.innerText = 'Selesai ✓';
-        }
+        if (badge) badge.innerText = 'Selesai ✓';
         const allBtns = document.querySelectorAll('.s4u-btn');
         const doneBtns = document.querySelectorAll('.s4u-btn.done');
         if (allBtns.length > 0 && doneBtns.length === allBtns.length) {
           localStorage.setItem('sub4unlock_done', 'true');
           const overlay = document.getElementById('sub4unlock-overlay');
-          if (overlay) {
-            overlay.style.display = 'none';
-          }
+          if (overlay) overlay.style.display = 'none';
         }
       }, 5000);
     }
@@ -447,23 +459,23 @@
     });
 
     function switchTab(screenId, element) {
-      activeTabId = screenId;
-      if (!navigator.onLine) {
-        checkConnection();
+      if (!navigator.onLine && screenId !== 'screen-games') {
         return;
       }
-      
+      activeTabId = screenId;
       document.getElementById('screen-games').style.display = 'none';
       document.getElementById('screen-event').style.display = 'none';
       document.getElementById('screen-animasi').style.display = 'none';
-
       document.getElementById(screenId).style.display = 'flex';
-
-      const navItems = document.querySelectorAll('.nav-item');
-      navItems.forEach(item => item.classList.remove('active'));
-      if (element) {
-        element.classList.add('active');
+      
+      if (screenId === 'screen-games' || screenId === 'screen-event') {
+        document.getElementById('snow-bg').style.display = 'block';
+      } else {
+        document.getElementById('snow-bg').style.display = 'none';
       }
+      
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      if (element) element.classList.add('active');
     }
 
     function checkConnection() {
@@ -474,18 +486,20 @@
         offlineScreen.style.display = 'none';
         navBar.style.display = 'flex';
         
-        document.getElementById('screen-games').style.display = 'none';
-        document.getElementById('screen-event').style.display = 'none';
-        document.getElementById('screen-animasi').style.display = 'none';
-
-        document.getElementById(activeTabId).style.display = 'flex';
+        const activeNavBtn = document.querySelector(`[onclick="switchTab('${activeTabId}', this)"]`);
+        switchTab(activeTabId, activeNavBtn);
       } else {
         offlineScreen.style.display = 'flex';
-        navBar.style.display = 'none';
+        navBar.style.display = 'flex'; 
         
-        document.getElementById('screen-games').style.display = 'none';
+        document.getElementById('screen-games').style.display = 'flex';
         document.getElementById('screen-event').style.display = 'none';
         document.getElementById('screen-animasi').style.display = 'none';
+        document.getElementById('snow-bg').style.display = 'block';
+        
+        activeTabId = 'screen-games';
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.nav-item')[0].classList.add('active');
       }
     }
 
@@ -493,7 +507,6 @@
     window.addEventListener('offline', checkConnection);
     
     updateAnimasi();
-    switchTab('screen-animasi', document.querySelectorAll('.nav-item')[2]);
     checkConnection();
 
     const iframeAnimasi = document.getElementById('iframe-animasi');
@@ -501,6 +514,92 @@
       setTimeout(function() {
         document.getElementById('main-nav').classList.add('show');
       }, 1000);
+    });
+
+    const canvas = document.getElementById('canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    camera.position.z = 30;
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(ambientLight);
+    
+    const snowLayers = [];
+    const snowCount = 2000;
+    
+    for (let layer = 0; layer < 3; layer++) {
+        const snowGeometry = new THREE.BufferGeometry();
+        const posArray = new Float32Array(snowCount * 3);
+        const velocities = [];
+        
+        for (let i = 0; i < snowCount; i++) {
+            const i3 = i * 3;
+            posArray[i3] = (Math.random() - 0.5) * 150;
+            posArray[i3 + 1] = Math.random() * 150 - 50;
+            posArray[i3 + 2] = (Math.random() - 0.5) * 150;
+            velocities.push({
+                y: -(Math.random() * 0.1 + 0.05) * (layer + 1),
+                x: (Math.random() - 0.5) * 0.02,
+                swing: Math.random() * 0.05
+            });
+        }
+        
+        snowGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        
+        const snowMaterial = new THREE.PointsMaterial({
+            size: 0.2 + layer * 0.2,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.9 - layer * 0.2,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        
+        const snowMesh = new THREE.Points(snowGeometry, snowMaterial);
+        snowMesh.userData.velocities = velocities;
+        snowLayers.push(snowMesh);
+        scene.add(snowMesh);
+    }
+    
+    let mouseX = 0, mouseY = 0;
+    document.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+    
+    let time = 0;
+    function animateSnow() {
+        requestAnimationFrame(animateSnow);
+        time += 0.01;
+        
+        snowLayers.forEach((snowMesh, layerIndex) => {
+            const positions = snowMesh.geometry.attributes.position.array;
+            const velocities = snowMesh.userData.velocities;
+            
+            for (let i = 0; i < positions.length / 3; i++) {
+                const i3 = i * 3;
+                positions[i3 + 1] += velocities[i].y;
+                positions[i3] += Math.sin(time + i) * velocities[i].swing;
+                if (positions[i3 + 1] < -75) positions[i3 + 1] = 75;
+            }
+            snowMesh.geometry.attributes.position.needsUpdate = true;
+        });
+        
+        renderer.render(scene, camera);
+    }
+    animateSnow();
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
     });
   </script>
 </body>
