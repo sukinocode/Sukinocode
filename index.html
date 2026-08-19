@@ -21,9 +21,9 @@
       height: 100%;
       height: 100dvh;
       overflow: hidden;
-      background-color: #121212;
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
       color: #ffffff;
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       touch-action: auto;
       overscroll-behavior: auto;
       position: fixed;
@@ -38,93 +38,173 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      z-index: -1;
-      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-      display: none;
+      z-index: 0;
       pointer-events: none;
+      display: block;
     }
     #canvas {
       width: 100%;
       height: 100%;
       display: block;
     }
-    .top-nav {
-      position: fixed;
-      top: 0;
-      left: 0;
+    .app-wrapper {
+      display: flex;
+      flex-direction: column;
       width: 100%;
-      height: 50px;
-      background-color: #181818;
-      border-bottom: 1px solid #2a2a2a;
+      height: 100%;
+      height: 100dvh;
+      max-width: 450px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .header {
+      background: rgba(200, 230, 255, 0.08);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-radius: 20px;
+      padding: 10px 12px;
+      margin: 10px 15px 5px 15px;
+      box-shadow: 0 8px 32px rgba(100, 200, 255, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(200, 230, 255, 0.15);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .author {
+      font-size: 0.7em;
+      font-weight: 600;
+      color: #8db9e8;
+      letter-spacing: 0.3px;
+      opacity: 0.9;
+    }
+    .header-right {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      padding: 0 15px;
-      z-index: 1000;
+      gap: 10px;
     }
     #audio-toggle {
       background: none;
       border: none;
-      color: #ffffff;
+      color: #00d4ff;
       cursor: pointer;
-      width: 30px;
-      height: 30px;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .view-counter {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.68em;
+      font-weight: 600;
+      color: #8db9e8;
+      letter-spacing: 0.3px;
+      opacity: 0.9;
+    }
+    .view-counter svg {
+      width: 12px;
+      height: 12px;
+      stroke: #00d4ff;
+      fill: none;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: rgba(180, 220, 255, 0.08);
+      padding: 5px;
+      border-radius: 14px;
+      border: 1px solid rgba(200, 230, 255, 0.1);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .tab {
+      flex: 1;
+      padding: 7px 5px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.65em;
+      color: #8db9e8;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .tab.active {
+      background: linear-gradient(135deg, rgba(74, 158, 255, 0.85), rgba(0, 212, 255, 0.85));
+      color: white;
+      box-shadow: 0 4px 16px rgba(74, 158, 255, 0.35);
+    }
+    @media (max-width: 480px) {
+      .tab {
+        font-size: 0.6em;
+        padding: 6px 4px;
+      }
+      .view-counter {
+        font-size: 0.65em;
+      }
     }
     #song-title-toast {
       position: fixed;
-      top: 70px;
+      top: 100px;
       left: 50%;
       transform: translateX(-50%);
-      background-color: rgba(0, 0, 0, 0.8);
+      background-color: rgba(0, 0, 0, 0.85);
       color: #ffffff;
-      padding: 10px 20px;
+      padding: 6px 16px;
       border-radius: 20px;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: bold;
       z-index: 9999;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.5s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
     #song-title-toast.show {
       opacity: 1;
     }
-    #screen-offline, #screen-games, #screen-event, #screen-animasi {
+    .screens-container {
+      flex: 1;
+      position: relative;
       width: 100%;
-      height: calc(100% - 110px);
+      overflow: hidden;
+    }
+    #screen-offline, #screen-games, #screen-event, #screen-buy {
+      width: 100%;
+      height: 100%;
       display: none;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       position: absolute;
-      top: 50px;
+      top: 0;
       left: 0;
     }
     #screen-offline {
-      height: calc(100% - 50px);
       text-align: center;
       padding: 20px;
       justify-content: center;
     }
-    #screen-games, #screen-event {
-      padding: 10px;
-      padding-bottom: 30px;
+    #screen-games, #screen-event, #screen-buy {
+      padding: 10px 15px 20px 15px;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
-    }
-    #screen-animasi {
-      padding: 0;
-      margin: 0;
-      border: none;
-      pointer-events: auto; 
-      justify-content: center;
-    }
-    #iframe-animasi {
-      width: 100%;
-      height: 100%;
-      border: none;
-      pointer-events: none; 
     }
     h1 {
       margin-bottom: 10px;
@@ -133,80 +213,76 @@
     .game-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 12px;
       width: 100%;
-      max-width: 400px;
     }
     .game-card {
+      background: rgba(200, 230, 255, 0.15);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 18px;
+      padding: 12px;
       display: flex;
       align-items: center;
-      background-color: rgba(30, 30, 30, 0.3);
-      border-radius: 8px;
-      padding: 5px;
+      gap: 12px;
+      box-shadow: 0 8px 30px rgba(100, 200, 255, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(200, 230, 255, 0.3);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      width: 100%;
       text-decoration: none;
       color: #ffffff;
-      border: 1px solid rgba(51, 51, 51, 0.3);
-      transition: transform 0.2s, background-color 0.2s;
     }
-    .game-card:active {
-      transform: scale(0.95);
-      background-color: rgba(30, 30, 30, 0.5);
+    .game-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(150, 220, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+    .game-card::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .game-card:hover::before, .game-card:active::before {
+      left: 100%;
+    }
+    .game-card:hover, .game-card:active {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 15px 45px rgba(74, 158, 255, 0.4), inset 0 1px 3px rgba(255, 255, 255, 0.3), 0 0 20px rgba(74, 158, 255, 0.2);
+      border-color: rgba(150, 210, 255, 0.5);
     }
     .game-card img {
       width: 50px;
       height: 50px;
+      border-radius: 12px;
       object-fit: cover;
-      border-radius: 6px;
-      margin-right: 10px;
       flex-shrink: 0;
+      box-shadow: 0 3px 15px rgba(74, 158, 255, 0.3);
+      transition: transform 0.3s;
+      border: 1px solid rgba(200, 230, 255, 0.3);
+    }
+    .game-card:hover img, .game-card:active img {
+      transform: rotate(5deg) scale(1.1);
     }
     .game-title {
-      font-size: 14px;
-      font-weight: bold;
-    }
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 60px;
-      background-color: #181818;
-      border-top: 1px solid #2a2a2a;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: 1000;
-      transform: translateY(100%);
-      transition: transform 0.5s ease-out;
-    }
-    .bottom-nav.show {
-      transform: translateY(0);
-    }
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #888888;
-      background: none;
-      border: none;
-      width: 33.33%;
-      height: 100%;
-      cursor: pointer;
-      font-size: 10px;
-      gap: 4px;
-      transition: transform 0.2s;
-    }
-    .nav-item:active {
-      transform: scale(0.9);
-    }
-    .nav-item.active {
-      color: #0088ff;
-    }
-    .nav-item svg {
-      width: 22px;
-      height: 22px;
-      fill: currentColor;
+      font-size: 0.85em;
+      font-weight: 700;
+      color: #e0f2ff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      overflow-wrap: break-word;
+      word-break: break-word;
+      line-height: 1.35;
     }
     #sub4unlock-overlay {
       position: fixed;
@@ -215,7 +291,7 @@
       width: 100%;
       height: 100%;
       height: 100dvh;
-      background-color: #0a192f;
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
       z-index: 999999;
       display: flex;
       flex-direction: column;
@@ -228,23 +304,28 @@
     .s4u-card {
       width: 100%;
       max-width: 400px;
-      background-color: #ffffff;
-      border-radius: 16px;
+      background: rgba(200, 230, 255, 0.12);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(200, 230, 255, 0.2);
+      border-radius: 20px;
       padding: 20px 16px;
       text-align: center;
-      color: #004080;
+      color: #e0f2ff;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       margin: auto 0;
     }
     .s4u-title {
       font-size: 20px;
       font-weight: 800;
-      color: #0052cc;
+      background: linear-gradient(135deg, #4a9eff, #00d4ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       margin-bottom: 6px;
     }
     .s4u-sub {
       font-size: 12px;
-      color: #003366;
+      color: #a3d5ff;
       margin-bottom: 16px;
     }
     .s4u-list {
@@ -259,10 +340,10 @@
       justify-content: space-between;
       width: 100%;
       padding: 12px 14px;
-      background-color: #0066ff;
+      background: linear-gradient(135deg, rgba(74, 158, 255, 0.85), rgba(0, 212, 255, 0.85));
       color: #ffffff;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 13px;
       font-weight: 700;
       cursor: pointer;
@@ -273,9 +354,9 @@
       transform: scale(0.98);
     }
     .s4u-btn.done {
-      background-color: #e6f0ff;
-      color: #0052cc;
-      border: 1px solid #0052cc;
+      background: rgba(200, 230, 255, 0.1);
+      color: #8db9e8;
+      border: 1px solid rgba(200, 230, 255, 0.2);
       cursor: default;
       pointer-events: none;
     }
@@ -287,7 +368,7 @@
       color: #ffffff;
     }
     .s4u-btn.done .s4u-badge {
-      background-color: #0052cc;
+      background-color: rgba(0, 212, 255, 0.4);
       color: #ffffff;
     }
   </style>
@@ -295,14 +376,6 @@
 <body>
 
   <audio id="bg-music" src="musik/クロニクル.mp3" loop></audio>
-
-  <nav class="top-nav">
-    <button id="audio-toggle" onclick="toggleAudio()">
-      <svg id="audio-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-        <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
-      </svg>
-    </button>
-  </nav>
 
   <div id="song-title-toast">クロニクル</div>
 
@@ -367,91 +440,119 @@
     </div>
   </div>
 
-  <div id="screen-offline">
-    <h1>Koneksi Terputus</h1>
-    <p>Aplikasi ini membutuhkan koneksi internet.</p>
-  </div>
+  <div class="app-wrapper">
+    <div class="header">
+      <div class="header-top">
+        <div class="author">by Nstorm</div>
+        <div class="header-right">
+          <button id="audio-toggle" onclick="toggleAudio()">
+            <svg id="audio-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+            </svg>
+          </button>
+          <div class="view-counter">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            73,2k Pengunjung
+          </div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab" data-tab="screen-games" onclick="switchTab('screen-games', this)">Daftar Game</button>
+        <button class="tab" data-tab="screen-event" onclick="switchTab('screen-event', this)">Event</button>
+        <button class="tab" data-tab="screen-buy" onclick="switchTab('screen-buy', this)">Buy</button>
+      </div>
+    </div>
 
-  <div id="screen-games">
-    <div class="game-list">      
-      <a href="Game/Balap Suki/index.html" class="game-card">
-        <img src="balap suki.jpg" alt="Balap Suki">
-        <span class="game-title">Balap Suki</span>
-      </a>
-      <a href="Game/Panah 3d/index.html" class="game-card">
-        <img src="panah 3d.jpg" alt="Panah 3d">
-        <span class="game-title">Panah 3d</span>
-      </a>
-      <a href="Game/Petualangan suki/index.html" class="game-card">
-        <img src="Suki adventure.jpg" alt="Petualangan suki">
-        <span class="game-title">Petualangan suki</span>
-      </a>
-      <a href="Game/Project catur 3d/index.html" class="game-card">
-        <img src="Project catur 3d.jpg" alt="Project catur 3d">
-        <span class="game-title">Project catur 3d</span>
-      </a>
-      <a href="Game/Suki plane 2/index.html" class="game-card">
-        <img src="Suki plane 2.jpg" alt="Suki plane 2">
-        <span class="game-title">Suki plane 2</span>
-      </a>
-      <a href="Game/Suki plane/index.html" class="game-card">
-        <img src="Suki plane.jpg" alt="Suki plane">
-        <span class="game-title">Suki plane</span>
-      </a>
-      <a href="Game/TicTacToe Pro/index.html" class="game-card">
-        <img src="tic tac toe pro.jpg" alt="TicTacToe Pro">
-        <span class="game-title">TicTacToe Pro</span>
-      </a>
+    <div class="screens-container">
+      <div id="screen-offline">
+        <h1>Koneksi Terputus</h1>
+        <p>Halaman ini membutuhkan koneksi internet.</p>
+      </div>
+
+      <div id="screen-games">
+        <div class="game-list">      
+          <a href="Game/Balap Suki/index.html" class="game-card">
+            <img src="balap suki.jpg" alt="Balap Suki">
+            <span class="game-title">Balap Suki</span>
+          </a>
+          <a href="Game/Panah 3d/index.html" class="game-card">
+            <img src="panah 3d.jpg" alt="Panah 3d">
+            <span class="game-title">Panah 3d</span>
+          </a>
+          <a href="Game/Petualangan suki/index.html" class="game-card">
+            <img src="Suki adventure.jpg" alt="Petualangan suki">
+            <span class="game-title">Petualangan suki</span>
+          </a>
+          <a href="Game/Project catur 3d/index.html" class="game-card">
+            <img src="Project catur 3d.jpg" alt="Project catur 3d">
+            <span class="game-title">Project catur 3d</span>
+          </a>
+          <a href="Game/Suki plane 2/index.html" class="game-card">
+            <img src="Suki plane 2.jpg" alt="Suki plane 2">
+            <span class="game-title">Suki plane 2</span>
+          </a>
+          <a href="Game/Suki plane/index.html" class="game-card">
+            <img src="Suki plane.jpg" alt="Suki plane">
+            <span class="game-title">Suki plane</span>
+          </a>
+          <a href="Game/TicTacToe Pro/index.html" class="game-card">
+            <img src="tic tac toe pro.jpg" alt="TicTacToe Pro">
+            <span class="game-title">TicTacToe Pro</span>
+          </a>
+        </div>
+      </div>
+
+      <div id="screen-event">
+        <div class="game-list">
+          <a href="https://chat.whatsapp.com/LDfpwieFdnr4ygCL3Vkj7d?s=cl&p=a&ilr=0" class="game-card">
+            <img src="https://i.ibb.co.com/jvppFWcK/1000001850-modified.png" alt="Starparks mud free">
+            <span class="game-title">Starparks mud free</span>
+          </a>
+          <a href="https://chat.whatsapp.com/LDfpwieFdnr4ygCL3Vkj7d?s=cl&p=a&ilr=0" class="game-card">
+            <img src="https://i.ibb.co.com/0VqYcgJh/1000001851-modified.png" alt="Bak Wangsaf free">
+            <span class="game-title">Bak Wangsaf free</span>
+          </a>
+          <a href="https://www.mediafire.com/file/77svchl1s776tat/RW_MLBB_BY_YT_CIK_REVIEW_1.0.apk/file" class="game-card">
+            <img src="https://i.ibb.co.com/1tDB5Hg0/images-2.jpg" alt="Rw mlbb">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span class="game-title">Rw mlbb</span>
+              <span style="font-size: 0.75em; color: #a3d5ff; font-weight: 600;">win rate : 70%, 80%, 90%, no ban</span>
+            </div>
+          </a>
+          <a href="https://www.mediafire.com/file/avtk7s35t81mzlt/Naruto_Mobile_Fighter_Offline.apk/file" class="game-card">
+            <img src="https://i.ibb.co.com/Ld784Rr0/images-1.jpg" alt="Naruto Mobile Fighter Offline">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span class="game-title">Naruto Mobile Fighter Offline</span>
+              <span style="font-size: 0.75em; color: #a3d5ff; font-weight: 600;">unlock 7 character</span>
+            </div>
+          </a>
+          <a href="https://www.mediafire.com/file/e4b85jcgkfry8pi/The_Spike_Volleyball_battle_3.5.5.apk/file" class="game-card">
+            <img src="https://i.ibb.co.com/GfKbgv1d/images.jpg" alt="The Spike Volleyball Story Mod Apk">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span class="game-title">The Spike Volleyball Story Mod Apk</span>
+              <span style="font-size: 0.75em; color: #a3d5ff; font-weight: 600;">3000+ download</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div id="screen-buy">
+        <div class="game-list">
+          <a href="tiktok.com/@mirlesssss" class="game-card">
+            <img src="https://i.ibb.co.com/jvppFWcK/1000001850-modified.png" alt="Starparks mud permanen harga 30K">
+            <span class="game-title">Starparks mud permanen harga 30K by mirles</span>
+          </a>
+          <a href="tiktok.com/@mirlesssss" class="game-card">
+            <img src="https://i.ibb.co.com/0VqYcgJh/1000001851-modified.png" alt="Bak Wangsaf 1th harga 30K">
+            <span class="game-title">Bak Wangsaf 1th harga 30K by anonim</span>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
-
-  <div id="screen-event">
-    <div class="game-list">
-      <a href="https://chat.whatsapp.com/LDfpwieFdnr4ygCL3Vkj7d?s=cl&p=a&ilr=0" class="game-card">
-        <img src="https://i.ibb.co.com/jvppFWcK/1000001850-modified.png" alt="Starparks mud free">
-        <span class="game-title">Starparks mud free</span>
-      </a>
-      <a href="https://chat.whatsapp.com/LDfpwieFdnr4ygCL3Vkj7d?s=cl&p=a&ilr=0" class="game-card">
-        <img src="https://i.ibb.co.com/0VqYcgJh/1000001851-modified.png" alt="Bak Wangsaf free">
-        <span class="game-title">Bak Wangsaf free</span>
-      </a>
-      <a href="https://saweria.co/CpJrCkB2k" class="game-card">
-        <img src="https://i.ibb.co.com/jvppFWcK/1000001850-modified.png" alt="Starparks mud 3bulan harga 15K">
-        <span class="game-title">Starparks mud 3bulan harga 15K by mirles</span>
-      </a>
-      <a href="https://saweria.co/CpJrCkB2k" class="game-card">
-        <img src="https://i.ibb.co.com/0VqYcgJh/1000001851-modified.png" alt="Bak Wangsaf 1 bulan harga 15K">
-        <span class="game-title">Bak Wangsaf 1 bulan harga 15K by anonim</span>
-      </a>
-      <a href="https://saweria.co/CpJrCkB2k" class="game-card">
-        <img src="https://i.ibb.co.com/jvppFWcK/1000001850-modified.png" alt="Starparks mud permanen harga 30K">
-        <span class="game-title">Starparks mud permanen harga 30K by mirles</span>
-      </a>
-      <a href="https://saweria.co/CpJrCkB2k" class="game-card">
-        <img src="https://i.ibb.co.com/0VqYcgJh/1000001851-modified.png" alt="Bak Wangsaf 1th harga 30K">
-        <span class="game-title">Bak Wangsaf 1th harga 30K by anonim</span>
-      </a>
-    </div>
-  </div>
-
-  <div id="screen-animasi">
-    <iframe id="iframe-animasi" src=""></iframe>
-  </div>
-
-  <nav class="bottom-nav" id="main-nav">
-    <button class="nav-item" onclick="switchTab('screen-games', this)">
-      <svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H9v2H7v-2H5v-2h2V9h2v2h2v2zm4.5 1c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 8 18.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-      <span>Daftar Game</span>
-    </button>
-    <button class="nav-item" onclick="switchTab('screen-event', this)">
-      <svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
-      <span>Event</span>
-    </button>
-    <button class="nav-item active" onclick="switchTab('screen-animasi', this)">
-      <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
-      <span>Animasi kedatangan</span>
-    </button>
-  </nav>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
@@ -527,84 +628,42 @@
       navigator.serviceWorker.register('sw.js');
     }
 
-    let activeTabId = 'screen-animasi';
-    let currentAnimasiIndex = parseInt(localStorage.getItem('selected_animasi_index') || 0);
-
-    const asetList = [
-      'Animasi kedatangan/Aset1/index.html',
-      'Animasi kedatangan/Aset2/index.html',
-      'Animasi kedatangan/Aset3/index.html',
-      'Animasi kedatangan/Aset4/index.html'
-    ];
-
-    function updateAnimasi() {
-      const iframe = document.getElementById('iframe-animasi');
-      iframe.src = asetList[currentAnimasiIndex];
-      localStorage.setItem('selected_animasi_index', currentAnimasiIndex);
-    }
-
-    document.getElementById('screen-animasi').addEventListener('dblclick', function() {
-        currentAnimasiIndex = (currentAnimasiIndex + 1) % asetList.length;
-        updateAnimasi();
-    });
+    let activeTabId = localStorage.getItem('activeTab') || 'screen-games';
 
     function switchTab(screenId, element) {
-      if (!navigator.onLine && screenId !== 'screen-games') {
-        return;
-      }
       activeTabId = screenId;
+      localStorage.setItem('activeTab', screenId);
+
+      document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
+      if (element) {
+        element.classList.add('active');
+      } else {
+        const btn = document.querySelector(`.tab[data-tab="${screenId}"]`);
+        if (btn) btn.classList.add('active');
+      }
+
       document.getElementById('screen-games').style.display = 'none';
       document.getElementById('screen-event').style.display = 'none';
-      document.getElementById('screen-animasi').style.display = 'none';
-      document.getElementById(screenId).style.display = 'flex';
-      
-      if (screenId === 'screen-games' || screenId === 'screen-event') {
-        document.getElementById('snow-bg').style.display = 'block';
+      document.getElementById('screen-buy').style.display = 'none';
+
+      if (!navigator.onLine && (screenId === 'screen-event' || screenId === 'screen-buy')) {
+        document.getElementById('screen-offline').style.display = 'flex';
       } else {
-        document.getElementById('snow-bg').style.display = 'none';
+        document.getElementById('screen-offline').style.display = 'none';
+        document.getElementById(screenId).style.display = 'flex';
       }
-      
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      if (element) element.classList.add('active');
+      document.getElementById('snow-bg').style.display = 'block';
     }
 
     function checkConnection() {
-      const offlineScreen = document.getElementById('screen-offline');
-      const navBar = document.getElementById('main-nav');
-      
-      if (navigator.onLine) {
-        offlineScreen.style.display = 'none';
-        navBar.style.display = 'flex';
-        
-        const activeNavBtn = document.querySelector(`[onclick="switchTab('${activeTabId}', this)"]`);
-        switchTab(activeTabId, activeNavBtn);
-      } else {
-        offlineScreen.style.display = 'flex';
-        navBar.style.display = 'flex'; 
-        
-        document.getElementById('screen-games').style.display = 'flex';
-        document.getElementById('screen-event').style.display = 'none';
-        document.getElementById('screen-animasi').style.display = 'none';
-        document.getElementById('snow-bg').style.display = 'block';
-        
-        activeTabId = 'screen-games';
-        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-        document.querySelectorAll('.nav-item')[0].classList.add('active');
-      }
+      const btn = document.querySelector(`.tab[data-tab="${activeTabId}"]`);
+      switchTab(activeTabId, btn);
     }
 
     window.addEventListener('online', checkConnection);
     window.addEventListener('offline', checkConnection);
-    
-    updateAnimasi();
-    checkConnection();
 
-    const iframeAnimasi = document.getElementById('iframe-animasi');
-    iframeAnimasi.addEventListener('load', function() {
-      setTimeout(function() {
-        document.getElementById('main-nav').classList.add('show');
-      }, 1000);
-    });
+    checkConnection();
 
     const canvas = document.getElementById('canvas');
     const scene = new THREE.Scene();
@@ -615,14 +674,30 @@
         alpha: true
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     camera.position.z = 30;
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(ambientLight);
+
+    function createRoundSnowTexture() {
+        const canvasTex = document.createElement('canvas');
+        canvasTex.width = 32;
+        canvasTex.height = 32;
+        const ctx = canvasTex.getContext('2d');
+        const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 32, 32);
+        const texture = new THREE.Texture(canvasTex);
+        texture.needsUpdate = true;
+        return texture;
+    }
     
     const snowLayers = [];
-    const snowCount = 2000;
+    const snowCount = 3000;
     
     for (let layer = 0; layer < 3; layer++) {
         const snowGeometry = new THREE.BufferGeometry();
@@ -649,11 +724,13 @@
             transparent: true,
             opacity: 0.9 - layer * 0.2,
             blending: THREE.AdditiveBlending,
+            map: createRoundSnowTexture(),
             depthWrite: false
         });
         
         const snowMesh = new THREE.Points(snowGeometry, snowMaterial);
         snowMesh.userData.velocities = velocities;
+        snowMesh.userData.layer = layer;
         snowLayers.push(snowMesh);
         scene.add(snowMesh);
     }
@@ -677,10 +754,22 @@
                 const i3 = i * 3;
                 positions[i3 + 1] += velocities[i].y;
                 positions[i3] += Math.sin(time + i) * velocities[i].swing;
-                if (positions[i3 + 1] < -75) positions[i3 + 1] = 75;
+                positions[i3] += velocities[i].x;
+                positions[i3] += mouseX * 0.01 * (layerIndex + 1);
+                positions[i3 + 1] += mouseY * 0.01 * (layerIndex + 1);
+                
+                if (positions[i3 + 1] < -75) {
+                    positions[i3 + 1] = 75;
+                    positions[i3] = (Math.random() - 0.5) * 150;
+                }
+                if (positions[i3] > 75) positions[i3] = -75;
+                if (positions[i3] < -75) positions[i3] = 75;
             }
             snowMesh.geometry.attributes.position.needsUpdate = true;
         });
+        
+        camera.position.x = Math.sin(time * 0.1) * 2;
+        camera.lookAt(scene.position);
         
         renderer.render(scene, camera);
     }
