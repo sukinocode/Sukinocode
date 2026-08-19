@@ -1,9 +1,17 @@
-const CACHE_NAME = 'suki999-v21';
+const CACHE_NAME = 'suki999-v22';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './suki1.png',
-  './suki2.png'
+  './suki2.png',
+  './musik/クロニクル.mp3',
+  './balap suki.jpg',
+  './panah 3d.jpg',
+  './Suki adventure.jpg',
+  './Project catur 3d.jpg',
+  './Suki plane 2.jpg',
+  './Suki plane.jpg',
+  './tic tac toe pro.jpg'
 ];
 
 self.addEventListener('install', (event) => {
