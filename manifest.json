@@ -1,7 +1,7 @@
 {
   "name": "Suki 999+",
   "short_name": "Suki 999+",
-  "version": "2",
+  "version": "3",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
