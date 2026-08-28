@@ -474,8 +474,9 @@
     </div>
   </div>
 
+  <!-- Tag video dengan atribut loop dan autoplay/playsinline -->
   <div id="intro-overlay">
-    <video id="intro-video" src="intro/lv_0_20260829011732.mp4" playsinline preload="auto" loop></video>
+    <video id="intro-video" src="intro/lv_0_20260829011732.mp4" playsinline preload="auto" loop muted></video>
     <div id="intro-text" onclick="closeIntro()">klik untuk mulai</div>
   </div>
 
@@ -650,6 +651,8 @@
       const introVideo = document.getElementById('intro-video');
       
       introOverlay.style.display = 'flex';
+      introVideo.loop = true; // Paksa Javascript untuk selalu aktifkan loop
+      introVideo.currentTime = 0;
       introVideo.play().catch(function(e) {});
       
       setTimeout(function() {
