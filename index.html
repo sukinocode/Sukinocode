@@ -474,7 +474,6 @@
     </div>
   </div>
 
-  <!-- Tag video dengan atribut loop dan autoplay/playsinline -->
   <div id="intro-overlay">
     <video id="intro-video" src="lv_0_20260829011732.mp4" playsinline preload="auto" loop muted></video>
     <div id="intro-text" onclick="closeIntro()">klik untuk mulai</div>
@@ -646,24 +645,18 @@
       }
     }
 
-    function showIntro() {
+    function skipS4u() {
+      localStorage.setItem('s4uUnlocked', 'true');
+      document.getElementById('sub4unlock-overlay').style.display = 'none';
       const introOverlay = document.getElementById('intro-overlay');
       const introVideo = document.getElementById('intro-video');
       
       introOverlay.style.display = 'flex';
-      introVideo.loop = true; // Paksa Javascript untuk selalu aktifkan loop
-      introVideo.currentTime = 0;
       introVideo.play().catch(function(e) {});
       
       setTimeout(function() {
         document.getElementById('intro-text').style.display = 'block';
       }, 5000);
-    }
-
-    function skipS4u() {
-      localStorage.setItem('s4uUnlocked', 'true');
-      document.getElementById('sub4unlock-overlay').style.display = 'none';
-      showIntro();
     }
 
     function closeIntro() {
@@ -692,7 +685,15 @@
     window.addEventListener('load', function() {
       if (localStorage.getItem('s4uUnlocked') === 'true') {
         document.getElementById('sub4unlock-overlay').style.display = 'none';
-        showIntro();
+        const introOverlay = document.getElementById('intro-overlay');
+        const introVideo = document.getElementById('intro-video');
+        
+        introOverlay.style.display = 'flex';
+        introVideo.play().catch(function(e) {});
+        
+        setTimeout(function() {
+          document.getElementById('intro-text').style.display = 'block';
+        }, 5000);
       }
 
       const firstTab = document.querySelector('.tab[data-tab="screen-games"]');
@@ -700,6 +701,122 @@
         firstTab.classList.add('active');
       }
       document.getElementById('screen-games').style.display = 'flex';
+    });
+
+    const canvas = document.getElementById('canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    camera.position.z = 30;
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(ambientLight);
+
+    function createRoundSnowTexture() {
+        const canvasTex = document.createElement('canvas');
+        canvasTex.width = 32;
+        canvasTex.height = 32;
+        const ctx = canvasTex.getContext('2d');
+        const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 32, 32);
+        const texture = new THREE.Texture(canvasTex);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    const snowLayers = [];
+    const snowCount = 3000;
+    
+    for (let layer = 0; layer < 3; layer++) {
+        const snowGeometry = new THREE.BufferGeometry();
+        const posArray = new Float32Array(snowCount * 3);
+        const velocities = [];
+        
+        for (let i = 0; i < snowCount; i++) {
+            const i3 = i * 3;
+            posArray[i3] = (Math.random() - 0.5) * 150;
+            posArray[i3 + 1] = Math.random() * 150 - 50;
+            posArray[i3 + 2] = (Math.random() - 0.5) * 150;
+            velocities.push({
+                y: -(Math.random() * 0.1 + 0.05) * (layer + 1),
+                x: (Math.random() - 0.5) * 0.02,
+                swing: Math.random() * 0.05
+            });
+        }
+        
+        snowGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        
+        const snowMaterial = new THREE.PointsMaterial({
+            size: 0.2 + layer * 0.2,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.9 - layer * 0.2,
+            blending: THREE.AdditiveBlending,
+            map: createRoundSnowTexture(),
+            depthWrite: false
+        });
+        
+        const snowMesh = new THREE.Points(snowGeometry, snowMaterial);
+        snowMesh.userData.velocities = velocities;
+        snowMesh.userData.layer = layer;
+        snowLayers.push(snowMesh);
+        scene.add(snowMesh);
+    }
+    
+    let mouseX = 0, mouseY = 0;
+    document.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+    });
+    
+    let time = 0;
+    function animateSnow() {
+        requestAnimationFrame(animateSnow);
+        time += 0.01;
+        
+        snowLayers.forEach((snowMesh, layerIndex) => {
+            const positions = snowMesh.geometry.attributes.position.array;
+            const velocities = snowMesh.userData.velocities;
+            
+            for (let i = 0; i < positions.length / 3; i++) {
+                const i3 = i * 3;
+                positions[i3 + 1] += velocities[i].y;
+                positions[i3] += Math.sin(time + i) * velocities[i].swing;
+                positions[i3] += velocities[i].x;
+                positions[i3] += mouseX * 0.01 * (layerIndex + 1);
+                positions[i3 + 1] += mouseY * 0.01 * (layerIndex + 1);
+                
+                if (positions[i3 + 1] < -75) {
+                    positions[i3 + 1] = 75;
+                    positions[i3] = (Math.random() - 0.5) * 150;
+                }
+                if (positions[i3] > 75) positions[i3] = -75;
+                if (positions[i3] < -75) positions[i3] = 75;
+            }
+            snowMesh.geometry.attributes.position.needsUpdate = true;
+        });
+        
+        camera.position.x = Math.sin(time * 0.1) * 2;
+        camera.lookAt(scene.position);
+        
+        renderer.render(scene, camera);
+    }
+    animateSnow();
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
     });
   </script>
 </body>
