@@ -690,6 +690,17 @@
     }
 
     window.addEventListener('load', function() {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function() {
+          if (!refreshing) {
+            window.location.reload();
+            refreshing = true;
+          }
+        });
+      }
+
       if (localStorage.getItem('s4uUnlocked') === 'true') {
         document.getElementById('sub4unlock-overlay').style.display = 'none';
         const introOverlay = document.getElementById('intro-overlay');
