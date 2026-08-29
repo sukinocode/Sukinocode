@@ -474,9 +474,8 @@
     </div>
   </div>
 
-  <!-- Tag video dengan atribut loop dan autoplay/playsinline -->
   <div id="intro-overlay">
-    <video id="intro-video" src="intro/lv_0_20260829011732.mp4" playsinline preload="auto" loop muted></video>
+    <video id="intro-video" src="lv_0_20260829011732.mp4" playsinline preload="auto"></video>
     <div id="intro-text" onclick="closeIntro()">klik untuk mulai</div>
   </div>
 
@@ -646,24 +645,18 @@
       }
     }
 
-    function showIntro() {
+    function skipS4u() {
+      localStorage.setItem('s4uUnlocked', 'true');
+      document.getElementById('sub4unlock-overlay').style.display = 'none';
       const introOverlay = document.getElementById('intro-overlay');
       const introVideo = document.getElementById('intro-video');
       
       introOverlay.style.display = 'flex';
-      introVideo.loop = true; // Paksa Javascript untuk selalu aktifkan loop
-      introVideo.currentTime = 0;
       introVideo.play().catch(function(e) {});
       
       setTimeout(function() {
         document.getElementById('intro-text').style.display = 'block';
       }, 5000);
-    }
-
-    function skipS4u() {
-      localStorage.setItem('s4uUnlocked', 'true');
-      document.getElementById('sub4unlock-overlay').style.display = 'none';
-      showIntro();
     }
 
     function closeIntro() {
@@ -692,7 +685,6 @@
     window.addEventListener('load', function() {
       if (localStorage.getItem('s4uUnlocked') === 'true') {
         document.getElementById('sub4unlock-overlay').style.display = 'none';
-        showIntro();
       }
 
       const firstTab = document.querySelector('.tab[data-tab="screen-games"]');
