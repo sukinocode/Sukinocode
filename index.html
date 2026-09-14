@@ -252,156 +252,12 @@
       word-break: break-word;
       line-height: 1.35;
     }
-    #sub4unlock-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      height: 100dvh;
-      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-      z-index: 999999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 20px 15px;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    .s4u-card {
-      width: 100%;
-      max-width: 400px;
-      background: rgba(200, 230, 255, 0.12);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border: 1px solid rgba(200, 230, 255, 0.2);
-      border-radius: 20px;
-      padding: 20px 16px;
-      text-align: center;
-      color: #e0f2ff;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      margin: auto 0;
-    }
-    .s4u-title {
-      font-size: 20px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #4a9eff, #00d4ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 6px;
-    }
-    .s4u-sub {
-      font-size: 12px;
-      color: #a3d5ff;
-      margin-bottom: 16px;
-    }
-    .s4u-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 100%;
-    }
-    .s4u-btn {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 12px 14px;
-      background: linear-gradient(135deg, rgba(74, 158, 255, 0.85), rgba(0, 212, 255, 0.85));
-      color: #ffffff;
-      border: none;
-      border-radius: 12px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform 0.2s;
-    }
-    .s4u-btn:active {
-      transform: scale(0.98);
-    }
-    .s4u-btn.done {
-      background: rgba(200, 230, 255, 0.1);
-      color: #8db9e8;
-      border: 1px solid rgba(200, 230, 255, 0.2);
-      cursor: default;
-      pointer-events: none;
-    }
-    .s4u-badge {
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background-color: rgba(255, 255, 255, 0.25);
-      color: #ffffff;
-    }
-    .s4u-btn.done .s4u-badge {
-      background-color: rgba(0, 212, 255, 0.4);
-      color: #ffffff;
-    }
   </style>
 </head>
 <body>
 
   <div id="snow-bg">
     <canvas id="canvas"></canvas>
-  </div>
-
-  <div id="sub4unlock-overlay">
-    <div class="s4u-card">
-      <div class="s4u-title">SUB4UNLOCK</div>
-      <div class="s4u-sub">Selesaikan semua tugas untuk membuka halaman</div>
-      <div class="s4u-list">
-        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o66QKV/" onclick="handleS4uClick(this)">
-          <span>Like & follow TikTok</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6yEho/" onclick="handleS4uClick(this)">
-          <span>Like TikTok</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6SUCn/" onclick="handleS4uClick(this)">
-          <span>Like TikTok</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6PQ3F/" onclick="handleS4uClick(this)">
-          <span>Like TikTok</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6pM2c/" onclick="handleS4uClick(this)">
-          <span>Like TikTok + bukti offline</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o6m8P5/" onclick="handleS4uClick(this)">
-          <span>Like TikTok = demon slayer</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://vt.tiktok.com/ZS4o64fSv/" onclick="handleS4uClick(this)">
-          <span>Like TikTok = sword of the sea</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://whatsapp.com/channel/0029Vauyr9L9Bb63SdcDJB3n" onclick="handleS4uClick(this)">
-          <span>Follow saluran</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://whatsapp.com/channel/0029Vb6t3YqIXnluSByJvh1g" onclick="handleS4uClick(this)">
-          <span>Follow saluran</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://youtu.be/89CafFD5LtA?si=dkD8sxCo2MGF4oMF" onclick="handleS4uClick(this)">
-          <span>Like & subscribe yt</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" data-url="https://youtube.com/@wangsafgamingg" onclick="handleS4uClick(this)">
-          <span>Subscribe yt</span>
-          <span class="s4u-badge">Buka</span>
-        </button>
-        <button class="s4u-btn" onclick="promptSkip()">
-          <span>Skip Sub4Unlock</span>
-          <span class="s4u-badge">Kunci</span>
-        </button>
-      </div>
-    </div>
   </div>
 
   <div class="app-wrapper">
@@ -414,7 +270,7 @@
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
-            6.3k
+            6.8k
           </div>
         </div>
       </div>
@@ -468,12 +324,12 @@
       <div id="screen-event">
         <div class="game-list">
           <a href="https://whatsapp.com/channel/0029Vauyr9L9Bb63SdcDJB3n" class="game-card">
-            <img src="https://i.ibb.co.com/jvppFWcK/1000001850-modified.png" alt="Starparks mud free">
-            <span class="game-title">Starparks mud free</span>
+            <img src="https://i.ibb.co.com/jvppFWcK/1000001850-modified.png" alt="event">
+            <span class="game-title">Event</span>
           </a>
           <a href="https://whatsapp.com/channel/0029Vauyr9L9Bb63SdcDJB3n" class="game-card">
-            <img src="https://i.ibb.co.com/0VqYcgJh/1000001851-modified.png" alt="Bak Wangsaf free">
-            <span class="game-title">Bak Wangsaf free</span>
+            <img src="https://i.ibb.co.com/0VqYcgJh/1000001851-modified.png" alt="Bak Wangsaf event">
+            <span class="game-title">Bak Wangsaf event</span>
           </a>
           <a href="https://www.mediafire.com/file/77svchl1s776tat/RW_MLBB_BY_YT_CIK_REVIEW_1.0.apk/file" class="game-card">
             <img src="https://i.ibb.co.com/1tDB5Hg0/images-2.jpg" alt="Rw mlbb">
@@ -493,7 +349,7 @@
             <img src="https://i.ibb.co.com/GfKbgv1d/images.jpg" alt="The Spike Volleyball Story Mod Apk">
             <div style="display: flex; flex-direction: column; gap: 2px;">
               <span class="game-title">The Spike Volleyball Story Mod Apk</span>
-              <span style="font-size: 0.75em; color: #a3d5ff; font-weight: 600;">3000+ download</span>
+              <span style="font-size: 0.75em; color: #a3d5ff; font-weight: 600;">unlimited muwani</span>
             </div>
           </a>
         </div>
@@ -501,24 +357,17 @@
 
       <div id="screen-buy">
         <div class="game-list">
-          <a href="https://saweria.co/CpJrCkB2k" class="game-card">
-            <img src="https://i.ibb.co.com/jvppFWcK/1000001850-modified.png" alt="Starparks mud permanen harga 30K">
-            <span class="game-title">Starparks Mud permanen 30K</span>
-          </a>
-          <a href="https://saweria.co/CpJrCkB2k" class="game-card">
-            <img src="https://i.ibb.co.com/0VqYcgJh/1000001851-modified.png" alt="Bak Wangsaf 1th harga 30K">
-            <span class="game-title">Bak Wangsaf permanen 30K</span>
           </a>
         </div>
       </div>
       
       <div id="screen-japost">
         <div class="game-list">
-          <a href="https://chat.whatsapp.com/LDfpwieFdnr4ygCL3Vkj7d?s=cl&p=a&mlu=4" class="game-card">
-            <img src="https://i.ibb.co.com/FLv0Hzkj/wp8562126.png" alt="Japost 10K/hari">
+          <a href="https://wa.me/6281930244528" class="game-card">
+            <img src="https://i.ibb.co.com/FLv0Hzkj/wp8562126.png" alt="Japost 10K 1hari">
             <div style="display: flex; flex-direction: column; gap: 2px;">
-              <span class="game-title">Japost 10K/hari <span style="font-size: 0.7em; font-weight: normal; color: #a3d5ff;">[ordernya di obrolan grup]</span></span>
-              <span style="font-size: 0.75em; color: #a3d5ff; font-weight: 600;">Jasa Post (Japost) untuk promosi. Order banyak japost = dapet banyak diskon</span>
+              <span class="game-title">Japost 10K 1hari <span style="font-size: 0.7em; font-weight: normal; color: #a3d5ff;">[wgxsuki]</span></span>
+              <span style="font-size: 0.75em; color: #a3d5ff; font-weight: 600;">Japost link</span>
             </div>
           </a>
         </div>
@@ -528,35 +377,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script>
-    let s4uCount = 0;
-    const totalS4u = 11;
-
-    function handleS4uClick(btn) {
-      if (!btn.classList.contains('done')) {
-        btn.classList.add('done');
-        btn.querySelector('.s4u-badge').textContent = 'Selesai';
-        s4uCount++;
-        window.open(btn.getAttribute('data-url'), '_blank');
-        if (s4uCount >= totalS4u) {
-          setTimeout(skipS4u, 1000);
-        }
-      }
-    }
-
-    function promptSkip() {
-      var pass = prompt("Masukkan password:");
-      if (pass === "wg gaming") {
-        skipS4u();
-      } else if (pass !== null) {
-        alert("Password salah!");
-      }
-    }
-
-    function skipS4u() {
-      localStorage.setItem('s4uUnlocked', 'true');
-      document.getElementById('sub4unlock-overlay').style.display = 'none';
-    }
-
     function switchTab(tabId, btn) {
       const tabs = document.querySelectorAll('.tab');
       tabs.forEach(function(t) { t.classList.remove('active'); });
@@ -582,10 +402,6 @@
             refreshing = true;
           }
         });
-      }
-
-      if (localStorage.getItem('s4uUnlocked') === 'true') {
-        document.getElementById('sub4unlock-overlay').style.display = 'none';
       }
 
       const firstTab = document.querySelector('.tab[data-tab="screen-games"]');
