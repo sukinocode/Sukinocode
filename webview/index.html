@@ -267,19 +267,35 @@
     canvasEl.addEventListener('touchmove', e=>{ e.preventDefault(); if(e.touches.length===1&&isDragging){ currentX=e.touches[0].clientX-startX; currentY=e.touches[0].clientY-startY; updateTransform(); } else if(e.touches.length===2){ let d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); currentScale=initialScale*(d/initialDistance); currentAngle=initialAngle+(getAngle(e.touches[0],e.touches[1])-initialAngleTouch); updateTransform(); } });
     canvasEl.addEventListener('touchend', ()=>isDragging=false);
     
-    document.getElementById('btnSave').addEventListener('click', async ()=>{ 
+    document.getElementById('btnSave').addEventListener('click', async () => { 
         await document.fonts.ready; 
         let targetScale = 1520 / canvasEl.offsetWidth; 
         canvasEl.style.border = 'none'; 
-        html2canvas(canvasEl,{backgroundColor:null, scale:targetScale, useCORS:true, scrollX:0, scrollY:0}).then(canvas=>{ 
-            canvas.toBlob(async blob => {
-                let file = new File([blob], 'Logo.png', { type: 'image/png' });
-                try {
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: 'Logo By Suki' });
+        html2canvas(canvasEl, { backgroundColor: null, scale: targetScale, useCORS: true, scrollX: 0, scrollY: 0 }).then(canvas => { 
+            canvasEl.style.border = '';
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const file = new File([blob], 'Logo.png', { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: 'Logo By Suki',
+                            files: [file]
+                        });
+                    } catch (e) {
+                        if (e && e.name !== 'AbortError') {
+                            let link = document.createElement('a');
+                            link.download = 'Logo.png';
+                            link.href = URL.createObjectURL(blob);
+                            link.click();
+                        }
                     }
-                } catch(e) {}
-                canvasEl.style.border = ''; 
+                } else {
+                    let link = document.createElement('a');
+                    link.download = 'Logo.png';
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                }
             }, 'image/png');
         }); 
     });
